@@ -453,56 +453,6 @@
       </div>
 
       <div class="card">
-        <h2><span class="dot"></span>付款類型</h2>
-        <div class="field">
-          <label>快速輸入(貼上理賠字串,自動帶入)</label>
-          <div style="display:flex; gap:8px">
-            <input id="payParse" placeholder="例:富邦本52626D103173林宜賢04-23850866#228前保BP.左前葉BP" style="flex:1"
-                   onkeydown="if(event.key==='Enter'){parseAndFillPayment();event.preventDefault();}" />
-            <button type="button" class="btn-ghost" style="flex:none" onclick="parseAndFillPayment()">解析</button>
-          </div>
-          <div class="hint">自動辨識:保險公司 + 本/財車、案號、經辦、電話,並連動受損部位。</div>
-        </div>
-        <div class="row">
-          <div>
-            <label>付款類型</label>
-            <select id="paymentType" onchange="onPaymentChange()">
-              <option value="">請選擇</option>
-              <option>自費</option>
-              <option>保固</option>
-              <option>DD</option>
-              <option>保險本車</option>
-              <option>保險財車</option>
-            </select>
-          </div>
-          <div id="insurerWrap" style="display:none">
-            <label>保險公司</label>
-            <select id="insurer"></select>
-          </div>
-        </div>
-        <div class="row three">
-          <div>
-            <label>案號</label>
-            <input id="caseNo" placeholder="理賠案號" />
-          </div>
-          <div>
-            <label>經辦</label>
-            <input id="agent" placeholder="經辦姓名" />
-          </div>
-          <div>
-            <label>經辦電話</label>
-            <input id="agentPhone" placeholder="含分機" />
-          </div>
-        </div>
-        <div class="hint">選「保險本車 / 保險財車」時,選擇保險公司後會自動組成例如「國泰本車」「富邦財車」。案號紙的「出險日期」會自動帶入派工至鈑金的派工日期。</div>
-      </div>
-
-      <div class="card">
-        <h2><span class="dot"></span>保險理賠資料 <span style="font-weight:400;font-size:12px;color:var(--muted)">(V 已繳、X 需補繳,點格子切換)</span></h2>
-        <div id="claimGrid" class="claim-grid"></div>
-      </div>
-
-      <div class="card">
         <h2><span class="dot"></span>時間紀錄</h2>
         <div class="row three">
           <div>
@@ -615,6 +565,56 @@
       </div>
 
       <div class="card">
+        <h2><span class="dot"></span>付款類型</h2>
+        <div class="field">
+          <label>快速輸入(貼上理賠字串,自動帶入)</label>
+          <div style="display:flex; gap:8px">
+            <input id="payParse" placeholder="例:富邦本52626D103173林宜賢04-23850866#228前保BP.左前葉BP" style="flex:1"
+                   onkeydown="if(event.key==='Enter'){parseAndFillPayment();event.preventDefault();}" />
+            <button type="button" class="btn-ghost" style="flex:none" onclick="parseAndFillPayment()">解析</button>
+          </div>
+          <div class="hint">自動辨識:保險公司 + 本/財車、案號、經辦、電話,並連動受損部位。</div>
+        </div>
+        <div class="row">
+          <div>
+            <label>付款類型</label>
+            <select id="paymentType" onchange="onPaymentChange()">
+              <option value="">請選擇</option>
+              <option>自費</option>
+              <option>保固</option>
+              <option>DD</option>
+              <option>保險本車</option>
+              <option>保險財車</option>
+            </select>
+          </div>
+          <div id="insurerWrap" style="display:none">
+            <label>保險公司</label>
+            <select id="insurer"></select>
+          </div>
+        </div>
+        <div class="row three">
+          <div>
+            <label>案號</label>
+            <input id="caseNo" placeholder="理賠案號" />
+          </div>
+          <div>
+            <label>經辦</label>
+            <input id="agent" placeholder="經辦姓名" />
+          </div>
+          <div>
+            <label>經辦電話</label>
+            <input id="agentPhone" placeholder="含分機" />
+          </div>
+        </div>
+        <div class="hint">選「保險本車 / 保險財車」時,選擇保險公司後會自動組成例如「國泰本車」「富邦財車」。案號紙的「出險日期」會自動帶入派工至鈑金的派工日期。</div>
+      </div>
+
+      <div class="card">
+        <h2><span class="dot"></span>保險理賠資料 <span style="font-weight:400;font-size:12px;color:var(--muted)">(V 已繳、X 需補繳,點格子切換)</span></h2>
+        <div id="claimGrid" class="claim-grid"></div>
+      </div>
+
+      <div class="card">
         <h2><span class="dot"></span>備註</h2>
         <textarea id="note" rows="3" placeholder="客人特殊需求…(例:急件、原廠件、漆面小刮不處理)"></textarea>
       </div>
@@ -622,32 +622,29 @@
       <div class="card">
         <h2><span class="dot"></span>服務指派 / 接車打卡</h2>
         <div class="field">
-          <label>接待專員</label>
+          <label>接待專員(選擇後自動打卡接車)</label>
           <select id="receptionist" onchange="onReceptionistChange()"></select>
         </div>
-        <div class="hint" style="margin:-6px 0 10px">鈑金 / 噴漆技師一律進入「完檢表」內各工序自行選擇並打卡。</div>
-        <div class="row">
-          <div>
-            <label>預計交車時間</label>
-            <input id="eta" type="datetime-local" />
+        <div class="field">
+          <div class="punch-box">
+            <span class="punch-time empty" id="punchTime">🕒 選擇專員後自動打卡接車</span>
           </div>
-          <div>
-            <label>維修進度</label>
-            <select id="statusSel" onchange="onDispatchChange()"></select>
-          </div>
+        </div>
+        <div class="hint" style="margin:-2px 0 12px">鈑金 / 噴漆技師一律進入「完檢表」內各工序自行選擇並打卡。</div>
+
+        <div class="field">
+          <label>維修進度(派工至「鈑金」時自動打卡派工)</label>
+          <select id="statusSel" onchange="onDispatchChange()"></select>
         </div>
         <div class="field" id="dispatchBox" style="display:none">
-          <label>派工時間(派工至「鈑金」時自動產生)</label>
           <div class="punch-box">
-            <span id="dispatchTime" class="punch-time">—</span>
+            <span class="punch-time" id="dispatchTime">🕒 —</span>
           </div>
         </div>
+
         <div class="field">
-          <label>接車打卡(選好接待專員後按打卡)</label>
-          <div class="punch-box">
-            <button class="btn-ghost" onclick="punchIn()">🕒 打卡接車</button>
-            <span id="punchTime" class="punch-time empty">尚未打卡</span>
-          </div>
+          <label>預計交車時間</label>
+          <input id="eta" type="datetime-local" />
         </div>
       </div>
 
@@ -766,6 +763,31 @@
       <button class="btn-primary" onclick="document.getElementById('vinFile').click()">📁 用相機拍高畫質照片</button>
     </div>
     <div class="hint" style="margin-top:10px"><b>辨識不出來時,請按「📁 用相機拍高畫質照片」</b>——會叫出手機原生相機,對焦最準、成功率最高。系統會優先讀貼紙左邊的<b>方形 2D 條碼</b>,讀不到才用文字辨識。<br><b>拍攝要點:</b>手機離貼紙約 15–20 公分(太近會對不到焦),改用<b>兩指放大 zoom</b>拉近;<b>點一下畫面對焦</b>;正對不要斜、避開反光。第一次辨識需下載模組(約數 MB)。</div>
+  </div>
+</div>
+
+<div id="washModal" class="modal">
+  <div class="deliver-card">
+    <h3>🚿 發放洗車券 — <span id="washPlate"></span></h3>
+    <p class="sub">交車前請先到洗車券系統發放洗車券,發放後再填寫工資。</p>
+    <div style="background:#f7f8fa;border:1px solid #e3e7ee;border-radius:10px;padding:14px;margin:12px 0">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">
+        <span style="min-width:52px;color:#6b7280">帳號</span>
+        <b id="washAcc" style="font-size:16px;letter-spacing:1px">TCIB</b>
+        <button class="btn-ghost" style="flex:none;padding:4px 10px" onclick="copyText('TCIB')">複製</button>
+      </div>
+      <div style="display:flex;align-items:center;gap:10px">
+        <span style="min-width:52px;color:#6b7280">密碼</span>
+        <b id="washPwd" style="font-size:16px;letter-spacing:1px">@Tcib1108</b>
+        <button class="btn-ghost" style="flex:none;padding:4px 10px" onclick="copyText('@Tcib1108')">複製</button>
+      </div>
+    </div>
+    <div class="actions" style="margin-top:16px;display:flex;flex-wrap:wrap;gap:8px">
+      <button class="btn-ghost" onclick="closeWash()">取消</button>
+      <button class="btn-ghost" onclick="openWashSite()">🔗 開啟洗車券系統</button>
+      <button class="btn-primary" onclick="washDoneNext()">已發放,填寫工資 →</button>
+    </div>
+    <div class="hint" style="margin-top:10px">因資安限制,無法自動登入其他網站;已幫你把帳密放上、可一鍵複製,按「開啟洗車券系統」時也會自動複製密碼。</div>
   </div>
 </div>
 
@@ -1123,7 +1145,7 @@ function onDispatchChange(){
 function renderDispatchTime(){
   const box = document.getElementById("dispatchBox");
   const el = document.getElementById("dispatchTime");
-  if(dispatchAt){ el.textContent = fmtDispatch(dispatchAt); el.classList.remove("empty"); box.style.display = ""; }
+  if(dispatchAt){ el.textContent = `🕒 派工:${fmtDispatch(dispatchAt)}`; el.classList.remove("empty"); box.style.display = ""; }
   else { box.style.display = "none"; }
 }
 // 選擇接待專員時自動打卡接車(第一次選擇即記錄時間;之後換人只更新名字)
@@ -1132,7 +1154,7 @@ function onReceptionistChange(){
   if(!rec) return;
   if(!checkinTime) checkinTime = new Date().toLocaleString("zh-TW", {hour12:false});
   const el = document.getElementById("punchTime");
-  el.textContent = `${staffLabel(rec)} · ${checkinTime}`;
+  el.textContent = `🕒 接車:${staffLabel(rec)} · ${checkinTime}`;
   el.classList.remove("empty");
   toast("已自動打卡接車 ✓");
 }
@@ -1141,7 +1163,7 @@ function punchIn(){
   if(!rec){ toast("請先選擇接待專員再打卡", true); return; }
   checkinTime = new Date().toLocaleString("zh-TW", {hour12:false});
   const el = document.getElementById("punchTime");
-  el.textContent = `${staffLabel(rec)} · ${checkinTime}`;
+  el.textContent = `🕒 接車:${staffLabel(rec)} · ${checkinTime}`;
   el.classList.remove("empty");
   toast("接車打卡完成 ✓");
 }
@@ -1468,7 +1490,7 @@ function clearForm(){
   document.getElementById("customPart").value = "";
   checkinTime = "";
   dispatchAt = 0; renderDispatchTime();
-  const pt = document.getElementById("punchTime"); pt.textContent = "尚未打卡"; pt.classList.add("empty");
+  const pt = document.getElementById("punchTime"); pt.textContent = "🕒 選擇專員後自動打卡接車"; pt.classList.add("empty");
   keyKept = ""; alignment = "";
   document.querySelectorAll(".seg-opt").forEach(b=>b.classList.remove("on"));
   // 結束編輯狀態
@@ -1481,10 +1503,10 @@ function setStatus(id, s){
   const list = load(); const o = list.find(x=>x.id===id);
   if(o){
     const target = STATUS[+s] || {};
-    // 交付前必須先填鈑金工資 / 噴漆工資
-    if(target.en === "Delivered" && !(hasWage(o.bodyWage) && hasWage(o.paintWage))){
-      openDeliver(id);
-      render();   // 下拉還原為原進度,待填完工資才真正交付
+    // 交付前流程:先發洗車券 → 再填鈑金 / 噴漆工資
+    if(target.en === "Delivered"){
+      openCarWash(id);
+      render();   // 下拉還原為原進度,待流程走完才真正交付
       return;
     }
     o.status = +s;
@@ -1501,6 +1523,36 @@ function setStatus(id, s){
   }
 }
 function delOrder(id){ save(load().filter(x=>x.id!==id)); render(); }
+
+/* ===== 洗車券:交車前先發放,再進工資 ===== */
+const WASH_URL = "https://admcarwash.tmsplus.com.tw/SerialCaseManagement.html";
+const WASH_ACC = "TCIB", WASH_PWD = "@Tcib1108";
+let washPendingId = null;
+function openCarWash(id){
+  const o = load().find(x=>x.id===id); if(!o) return;
+  washPendingId = id;
+  document.getElementById("washPlate").textContent = o.plate || "(無車牌)";
+  document.getElementById("washModal").classList.add("show");
+}
+function closeWash(){
+  document.getElementById("washModal").classList.remove("show");
+  washPendingId = null; render();   // 取消 → 進度還原
+}
+function openWashSite(){
+  try{ if(navigator.clipboard) navigator.clipboard.writeText(WASH_PWD); }catch(e){}
+  window.open(WASH_URL, "_blank");
+  toast("已開啟洗車券系統,密碼已複製");
+}
+function washDoneNext(){
+  const id = washPendingId;
+  document.getElementById("washModal").classList.remove("show");
+  washPendingId = null;
+  if(id != null) openDeliver(id);   // 接著跳工資填寫
+}
+function copyText(t){
+  try{ navigator.clipboard.writeText(t); toast("已複製:" + t); }
+  catch(e){ toast("複製失敗,請手動複製", true); }
+}
 
 /* ===== 交車確認:交付前必填鈑金 / 噴漆工資,並同步到總表 ===== */
 let pendingDeliverId = null;
@@ -1697,7 +1749,7 @@ function editOrder(id){
   setV("statusSel", String(o.status||0));
   checkinTime = o.checkin || "";
   const pt = document.getElementById("punchTime");
-  if(checkinTime){ pt.textContent = `${o.receptionist||""} · ${checkinTime}`; pt.classList.remove("empty"); }
+  if(checkinTime){ pt.textContent = `🕒 接車:${o.receptionist||""} · ${checkinTime}`; pt.classList.remove("empty"); }
   else { pt.textContent = "尚未打卡"; pt.classList.add("empty"); }
   dispatchAt = o.dispatchAt || 0; renderDispatchTime();
   // 簽名日期
@@ -1732,7 +1784,13 @@ function setYN(id, key, val, el){
 }
 // 是/否 直接點選(可再點一次取消),用於 SA 確認等
 function pickYN(id, key, val){
-  qcMutate(id, o=>{ o.qc.checks[key] = (o.qc.checks[key]===val ? "" : val); });
+  qcMutate(id, o=>{
+    o.qc.checks[key] = (o.qc.checks[key]===val ? "" : val);
+    // SA 確認「遠端存取已恢復」點「是」→ 自動壓服務顧問日期
+    if(key==='sa' && o.qc.checks.sa==='是' && !o.qc.advisorDate){
+      o.qc.advisorDate = new Date().toLocaleString("zh-TW",{hour12:false});
+    }
+  });
   refreshQC();
 }
 function togglePos(id, p, el){
@@ -1740,7 +1798,19 @@ function togglePos(id, p, el){
   qcMutate(id, o=>{ now = !posChecked(o,p); o.qc.pos[p] = now; });
   el.classList.toggle("on", now);
 }
-function saveQCField(id, field, v){ qcMutate(id, o=>{ o.qc[field] = v; }); }
+function saveQCField(id, field, v){
+  let stamped = false;
+  qcMutate(id, o=>{
+    o.qc[field] = v;
+    // 總檢簽字押上名字 → 自動壓最終完工時間
+    if(field==='finalSign' && v && !o.qc.finalTime){
+      o.qc.finalTime = new Date().toLocaleString("zh-TW",{hour12:false});
+      o.completeTime = o.qc.finalTime;
+      stamped = true;
+    }
+  });
+  if(stamped){ refreshQC(); render(); toast("總檢簽字完成 ✓ 已自動壓最終完工時間"); }
+}
 function saveTire(id, pos, f, v){ qcMutate(id, o=>{ o.qc.tire[pos] = o.qc.tire[pos]||{}; o.qc.tire[pos][f] = v; }); }
 
 // 完檢表內:技師選擇(每個工序自己選誰施工)
@@ -1909,9 +1979,11 @@ function claimSummary(o){
 // 流程進度:接車 → 派工 → 完工 → 交車
 function flowHtml(o){
   const finish = o.finishTime || o.completeTime || (o.qc && o.qc.finalTime) || "";
+  const workStart = secStart(o,'body') || secStart(o,'prep') || o.bodyCheckin || o.paintCheckin || "";
   const steps = [
     {lbl:"接車", t:o.checkin},
     {lbl:"派工", t:o.dispatchAt ? fmtDispatch(o.dispatchAt) : ""},
+    {lbl:"施工", t:workStart},
     {lbl:"完工", t:finish},
     {lbl:"交車", t:o.exitTime},
   ];
@@ -1932,7 +2004,7 @@ function cardHtml(o){
             <span style="font-size:12px;color:${statusColor(o.status)}">● ${st.en}(${st.zh})</span>
           </div>
           <div class="meta">建立:${o.time}</div>
-          <div class="meta">專員:<b>${o.receptionist||"—"}</b> ｜ 鈑金技師:<b style="color:${bodyTechText(o)?'var(--accent)':'var(--muted)'}">${bodyTechText(o)||"未指派"}</b></div>
+          <div class="meta">專員:<b style="color:#7c3aed">${o.receptionist||"—"}</b> ｜ 鈑金技師:<b style="color:${bodyTechText(o)?'var(--accent)':'var(--muted)'}">${bodyTechText(o)||"未指派"}</b></div>
         </div>
         <button class="del" title="刪除" onclick="delOrder(${o.id})">×</button>
       </div>
