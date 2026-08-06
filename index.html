@@ -11,23 +11,25 @@
 <meta name="apple-mobile-web-app-title" content="鈑噴派工" />
 <style>
   :root{
-    --bg:#eef1f6; --panel:#ffffff; --panel2:#f2f4f7; --line:#e3e7ee;
-    --text:#1a1d24; --muted:#6b7280; --accent:#e82127; --accent2:#2563eb;
-    --ok:#16a34a; --warn:#d97706; --radius:14px;
-    --shadow-sm:0 1px 2px rgba(16,24,40,.06);
-    --shadow-md:0 6px 20px rgba(16,24,40,.08);
-    --shadow-lg:0 18px 50px rgba(16,24,40,.16);
-    --glow:0 0 0 1px rgba(232,33,39,.18), 0 0 18px rgba(232,33,39,.14);
+    --bg:#eceff5; --panel:#ffffff; --panel2:#f4f6fa; --line:#e6e9f1;
+    --text:#141821; --muted:#667085; --accent:#e82127; --accent2:#2563eb;
+    --ok:#16a34a; --warn:#d97706; --radius:16px;
+    --shadow-sm:0 1px 2px rgba(16,24,40,.05), 0 1px 3px rgba(16,24,40,.04);
+    --shadow-md:0 8px 24px rgba(16,24,40,.09);
+    --shadow-lg:0 20px 55px rgba(16,24,40,.18);
+    --glow:0 0 0 1px rgba(232,33,39,.16), 0 0 18px rgba(232,33,39,.12);
   }
   *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  ::selection{background:rgba(232,33,39,.16)}
   body{
-    margin:0; font-family:"Segoe UI","Microsoft JhengHei",system-ui,sans-serif;
+    margin:0; font-family:"Segoe UI","PingFang TC","Microsoft JhengHei","Noto Sans TC",system-ui,sans-serif;
     background:
       radial-gradient(1100px 520px at 100% -12%, rgba(232,33,39,.06), transparent 58%),
       radial-gradient(900px 500px at -10% 0%, rgba(37,99,235,.05), transparent 55%),
       var(--bg);
     background-attachment:fixed;
-    color:var(--text); line-height:1.5; -webkit-font-smoothing:antialiased;
+    color:var(--text); line-height:1.55; -webkit-font-smoothing:antialiased; text-rendering:optimizeLegibility;
   }
   body::before{content:""; position:fixed; inset:0; z-index:0; pointer-events:none;
     background-image:
@@ -54,8 +56,8 @@
   @media(max-width:880px){.grid{grid-template-columns:1fr}}
   .card{background:var(--panel); border:1px solid var(--line); border-radius:var(--radius); padding:20px; margin-bottom:20px; box-shadow:var(--shadow-sm); transition:box-shadow .2s, transform .2s}
   .card:hover{box-shadow:var(--shadow-md)}
-  .card h2{font-size:14px; margin:0 0 16px; color:var(--text); display:flex; align-items:center; gap:8px; padding-bottom:12px; border-bottom:1px solid var(--line)}
-  .card h2 .dot{width:9px;height:9px;border-radius:50%;background:var(--accent); box-shadow:0 0 0 4px rgba(232,33,39,.12)}
+  .card h2{font-size:15px; font-weight:700; letter-spacing:.3px; margin:0 0 16px; color:var(--text); display:flex; align-items:center; gap:9px; padding-bottom:12px; border-bottom:1px solid var(--line)}
+  .card h2 .dot{width:9px;height:9px;border-radius:50%;background:linear-gradient(180deg,#f4353b,var(--accent)); box-shadow:0 0 0 4px rgba(232,33,39,.12)}
   label{display:block; font-size:12px; color:var(--muted); margin:0 0 6px}
   .row{display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-bottom:14px}
   .row.three{grid-template-columns:1fr 1fr 1fr}
@@ -301,7 +303,7 @@
   .wo .meta .dim{color:#9aa1ac}
   .st-pill{display:inline-flex; align-items:center; gap:4px; font-size:11px; font-weight:800; padding:2px 9px; border-radius:20px; border:1px solid; line-height:1.6}
   .wo .chips{margin-top:10px; display:flex; flex-wrap:wrap; gap:6px}
-  .chip{font-size:11px; padding:3px 10px; border-radius:20px; background:#eef1f5; color:#48505c; font-weight:600}
+  .chip{font-size:11.5px; padding:4px 11px; border-radius:20px; background:#eef1f5; color:#48505c; font-weight:600; line-height:1.4}
   .chip.dmg{background:#fde3e4; color:#b91c1c}
   .chip.pay{background:#e0e7ff; color:#3730a3}
   .chip.eta{background:#ecfeff; color:#0e7490}
