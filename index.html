@@ -2234,7 +2234,7 @@ function cardHtml(o){
     // 精簡卡片重點(置頂):鑰匙 / 四輪定位 / 預計交車(車型車色已移到車牌旁)
     const keyChips = [
       o.keyKept?`<span class="chip">🔑 鑰匙:${o.keyKept}</span>`:"",
-      o.alignment?`<span class="chip">🎯 四輪定位:${o.alignment}</span>`:"",
+      o.alignment?`<span class="chip">🛞 四輪定位:${o.alignment}</span>`:"",
       o.eta?`<span class="chip eta">🚗 預計交車 ${fmtTimeShort(o.eta)}</span>`:"",
     ].filter(Boolean).join("");
     // 損傷部位(置頂,獨立一列)
