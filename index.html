@@ -70,13 +70,17 @@
   .vin-row{display:flex; gap:10px}
   .vin-row input{flex:1; text-transform:uppercase; letter-spacing:2px; font-family:"Consolas",monospace}
   button{
-    cursor:pointer; border:none; border-radius:10px; font-size:14px; font-weight:600; padding:11px 18px; transition:.15s;
+    cursor:pointer; border:none; border-radius:10px; font-size:14px; font-weight:600; padding:11px 18px;
+    transition:transform .08s ease, box-shadow .15s ease, background .15s ease, border-color .15s ease;
+    -webkit-tap-highlight-color:transparent; touch-action:manipulation;
   }
-  button:active{transform:translateY(1px)}
+  button:active{transform:scale(.96)}
   :focus-visible{outline:2px solid var(--accent2); outline-offset:2px}
   .btn-primary{background:linear-gradient(180deg,#f4353b,var(--accent)); color:#fff; box-shadow:0 2px 8px rgba(232,33,39,.28)}
-  .btn-primary:hover{background:linear-gradient(180deg,#ff2d33,#e01e24); box-shadow:0 5px 14px rgba(232,33,39,.36)}
+  .btn-primary:hover{background:linear-gradient(180deg,#ff2d33,#e01e24); box-shadow:0 6px 16px rgba(232,33,39,.4); transform:translateY(-1px)}
+  .btn-primary:active{transform:translateY(0) scale(.98); box-shadow:0 2px 8px rgba(232,33,39,.3)}
   .btn-ghost{background:var(--panel2); color:var(--text); border:1px solid var(--line)}
+  .btn-ghost:active{transform:scale(.97)}
   .btn-ghost:hover{border-color:var(--accent2); background:#fff}
   .decode-out{
     margin-top:12px; background:var(--panel2); border:1px dashed var(--line); border-radius:10px; padding:14px; font-size:13px;
@@ -121,8 +125,10 @@
   .plabel{font-size:8px; fill:#5b6270; pointer-events:none; text-anchor:middle; dominant-baseline:middle; font-weight:600}
   .wlabel{font-size:7px; fill:#eef1f5; pointer-events:none; text-anchor:middle; dominant-baseline:middle}
   .part.sel ~ .plabel,.pillar.sel ~ .plabel{fill:var(--accent)}
-  .mini{font-size:12px; padding:6px 10px; border-radius:8px; background:#fff; border:1px solid var(--line); color:var(--text); font-weight:600; cursor:pointer}
-  .mini:hover{border-color:var(--accent2)}
+  .mini{font-size:12px; padding:7px 12px; border-radius:9px; background:#fff; border:1px solid var(--line); color:var(--text); font-weight:600; cursor:pointer;
+    transition:transform .08s ease, border-color .15s ease, background .15s ease, box-shadow .15s ease; -webkit-tap-highlight-color:transparent; touch-action:manipulation}
+  .mini:hover{border-color:var(--accent2); background:#f7faff}
+  .mini:active{transform:scale(.95); background:#eef4ff}
   /* 工單卡片打卡列 */
   .punch-row{display:flex; flex-wrap:wrap; align-items:center; gap:6px; margin-top:8px}
   .punch-label{font-size:12px; font-weight:700; color:var(--text); min-width:52px}
@@ -174,16 +180,18 @@
   .wo-stats .st.info b{color:var(--accent2)}
   .wo-stats .st.ok b{color:var(--ok)}
   .wo-stats .st .lb{font-size:11px; color:var(--muted); font-weight:600}
-  .flow{display:flex; align-items:flex-start; margin:12px 0 6px}
+  .flow{display:flex; align-items:flex-start; margin:12px 0 4px; padding:12px 6px 8px; background:linear-gradient(180deg,#fbfcfe,#f5f7fb); border:1px solid var(--line); border-radius:12px}
   .flow .step{flex:1; text-align:center; position:relative; font-size:11px}
-  .flow .step:not(:last-child)::after{content:""; position:absolute; top:9px; left:50%; width:100%; height:2px; background:var(--line); z-index:0}
+  .flow .step:not(:last-child)::after{content:""; position:absolute; top:10px; left:50%; width:100%; height:2px; background:var(--line); z-index:0}
   .flow .step.done:not(:last-child)::after{background:#16a34a}
-  .flow .dot{width:20px; height:20px; border-radius:50%; background:#fff; border:2px solid var(--line); margin:0 auto 4px; position:relative; z-index:1; display:flex; align-items:center; justify-content:center; font-size:11px; color:#fff; line-height:1}
-  .flow .step.done .dot{background:#16a34a; border-color:#16a34a}
-  .flow .step.cur .dot{border-color:var(--accent); box-shadow:0 0 0 3px rgba(232,33,39,.15)}
+  .flow .dot{width:22px; height:22px; border-radius:50%; background:#fff; border:2px solid var(--line); margin:0 auto 5px; position:relative; z-index:1; display:flex; align-items:center; justify-content:center; font-size:12px; color:#fff; line-height:1; transition:.2s}
+  .flow .step.done .dot{background:#16a34a; border-color:#16a34a; box-shadow:0 2px 6px rgba(22,163,74,.3)}
+  .flow .step.cur .dot{border-color:var(--accent); color:var(--accent); box-shadow:0 0 0 4px rgba(232,33,39,.14); animation:flowPulse 1.8s ease-in-out infinite}
+  @keyframes flowPulse{0%,100%{box-shadow:0 0 0 3px rgba(232,33,39,.16)} 50%{box-shadow:0 0 0 6px rgba(232,33,39,.06)}}
   .flow .lbl{font-weight:700; color:var(--text)}
-  .flow .tm{color:var(--muted); font-size:10px; margin-top:1px; min-height:12px}
-  .flow .step.cur .tm{color:var(--accent); font-weight:600}
+  .flow .step.done .lbl{color:#15803d}
+  .flow .tm{color:var(--muted); font-size:10px; margin-top:2px; min-height:12px; line-height:1.3}
+  .flow .step.cur .tm{color:var(--accent); font-weight:700}
   .wo-toolbar{padding:8px 10px; background:var(--panel2); border:1px solid var(--line); border-radius:12px}
   .wo-toolbar select{font-size:13px; padding:7px 9px; border:1px solid var(--line); border-radius:9px; background:#fff}
   .vbtn{font-size:13px; padding:7px 12px; border:1px solid var(--line); border-radius:9px; background:#fff; cursor:pointer; font-weight:600; color:var(--text); transition:.15s}
@@ -281,15 +289,30 @@
   .dmg-row .del{font-size:16px}
 
   /* work order list */
-  .wo{background:#fff; border:1px solid var(--line); border-left:3px solid var(--accent); border-radius:12px; padding:14px 16px; margin-bottom:12px; box-shadow:var(--shadow-sm); transition:.15s}
-  .wo:hover{box-shadow:var(--shadow-md), var(--glow); transform:translateY(-1px); border-left-color:#ff2d33}
+  .wo{background:#fff; border:1px solid var(--line); border-left:4px solid var(--accent); border-radius:14px; padding:14px 16px; margin-bottom:12px; box-shadow:var(--shadow-sm); transition:box-shadow .18s, transform .18s, border-color .18s}
+  .wo:hover{box-shadow:var(--shadow-md); transform:translateY(-1px); border-left-color:#ff2d33}
+  .wo.expanded{box-shadow:var(--shadow-md), var(--glow)}
   .wo .top{display:flex; justify-content:space-between; align-items:flex-start; gap:10px}
-  .wo .plate{font-weight:800; font-size:17px; letter-spacing:1px}
-  .wo .meta{font-size:12px; color:var(--muted); margin-top:4px}
+  .wo .plate{font-weight:800; font-size:18px; letter-spacing:1px; display:flex; align-items:baseline; gap:8px; flex-wrap:wrap}
+  .wo .plate .wno{font-size:12px;color:var(--muted);font-weight:600;letter-spacing:0}
+  .wo .meta{font-size:12px; color:var(--muted); margin-top:5px; display:flex; align-items:center; gap:6px; flex-wrap:wrap}
+  .wo .meta .dim{color:#9aa1ac}
+  .st-pill{display:inline-flex; align-items:center; gap:4px; font-size:11px; font-weight:800; padding:2px 9px; border-radius:20px; border:1px solid; line-height:1.6}
   .wo .chips{margin-top:10px; display:flex; flex-wrap:wrap; gap:6px}
   .chip{font-size:11px; padding:3px 10px; border-radius:20px; background:#eef1f5; color:#48505c; font-weight:600}
   .chip.dmg{background:#fde3e4; color:#b91c1c}
-  .status-sel{font-size:12px; padding:5px 8px; border-radius:8px; background:#fff; border:1px solid var(--line); color:var(--text); max-width:220px}
+  .chip.pay{background:#e0e7ff; color:#3730a3}
+  .chip.eta{background:#ecfeff; color:#0e7490}
+  /* 精簡卡片:詳情展開 */
+  .wo-bar{display:flex; align-items:center; gap:8px; margin-top:12px}
+  .wo-bar .status-sel{flex:1; min-width:0}
+  .expand-btn{flex:none; white-space:nowrap}
+  .wo-more{display:none; margin-top:4px; padding-top:12px; border-top:1px dashed var(--line); animation:woFade .2s ease}
+  .wo.expanded .wo-more{display:block}
+  @keyframes woFade{from{opacity:0; transform:translateY(-4px)} to{opacity:1; transform:none}}
+  .wo-actions{margin-top:12px; display:flex; flex-wrap:wrap; gap:8px}
+  .status-sel{font-size:13px; padding:8px 10px; border-radius:9px; background:#fff; border:1px solid var(--line); color:var(--text)}
+  .status-sel:focus{border-color:var(--accent2); box-shadow:0 0 0 3px rgba(37,99,235,.12); outline:none}
   .empty{color:var(--muted); font-size:13px; text-align:center; padding:30px 0}
   .del{background:none;border:none;color:#9aa0ab;font-size:18px;cursor:pointer;padding:0 4px}
   .del:hover{color:var(--accent)}
@@ -1158,20 +1181,28 @@ function renderDispatchTime(){
 function onReceptionistChange(){
   const rec = val("receptionist");
   if(!rec) return;
-  if(!checkinTime) checkinTime = new Date().toLocaleString("zh-TW", {hour12:false});
+  const now = new Date();
+  const firstTime = !checkinTime;
+  if(!checkinTime) checkinTime = now.toLocaleString("zh-TW", {hour12:false});
+  // 選擇專員 → 自動打卡接車,並同步帶入「時間紀錄 · 進場時間」
+  const et = document.getElementById("entryTime");
+  if(et && !et.value) et.value = nowLocalInput(now);
   const el = document.getElementById("punchTime");
   el.textContent = `🕒 接車:${staffLabel(rec)} · ${checkinTime}`;
   el.classList.remove("empty");
-  toast("已自動打卡接車 ✓");
+  toast(firstTime ? "已自動打卡接車 ✓ 已帶入進場時間" : "已更新接待專員 ✓");
 }
 function punchIn(){
   const rec = val("receptionist");
   if(!rec){ toast("請先選擇接待專員再打卡", true); return; }
-  checkinTime = new Date().toLocaleString("zh-TW", {hour12:false});
+  const now = new Date();
+  checkinTime = now.toLocaleString("zh-TW", {hour12:false});
+  const et = document.getElementById("entryTime");
+  if(et && !et.value) et.value = nowLocalInput(now);
   const el = document.getElementById("punchTime");
   el.textContent = `🕒 接車:${staffLabel(rec)} · ${checkinTime}`;
   el.classList.remove("empty");
-  toast("接車打卡完成 ✓");
+  toast("接車打卡完成 ✓ 已帶入進場時間");
 }
 // 工單上的技師打卡:鈑金 / 噴漆
 function punchOrder(id, role){
@@ -1252,8 +1283,27 @@ function paintRow(o){
   }
   return `<div class="punch-row"><span class="punch-label">🎨 噴漆</span></div>${stageRows}<div class="punch-row sub"><span class="punch-label sub">互檢</span>${crossHtml}</div>`;
 }
-function fmtEta(v){ return v ? String(v).replace("T", " ") : ""; }
-function shortDT(v){ return v ? String(v).replace("T"," ").replace(/:\d{2}$/,"") : ""; }
+// 統一時間顯示:全部轉為斜線格式 YYYY/M/D HH:mm:ss(可吃 datetime-local / toLocaleString / 時間戳)
+// 用正規表達式解析,避免 iOS Safari 對 new Date() 字串格式挑剔
+function _parseTimeParts(v){
+  if(v==null || v==='') return null;
+  if(typeof v==='number'){ const d=new Date(v); return [d.getFullYear(),d.getMonth()+1,d.getDate(),d.getHours(),d.getMinutes(),d.getSeconds()]; }
+  const m = String(v).trim().match(/(\d{4})[\/\-](\d{1,2})[\/\-](\d{1,2})[T\s]+(\d{1,2}):(\d{1,2})(?::(\d{1,2}))?/);
+  if(!m) return null;
+  return [ +m[1], +m[2], +m[3], +m[4], +m[5], m[6]?+m[6]:0 ];
+}
+function fmtTime(v){
+  const a=_parseTimeParts(v); if(!a) return v?String(v):"";
+  const p=n=>String(n).padStart(2,'0');
+  return `${a[0]}/${a[1]}/${a[2]} ${p(a[3])}:${p(a[4])}:${p(a[5])}`;
+}
+function fmtTimeShort(v){   // 時間軸精簡用:M/D HH:mm(仍為斜線風格)
+  const a=_parseTimeParts(v); if(!a) return v?String(v):"";
+  const p=n=>String(n).padStart(2,'0');
+  return `${a[1]}/${a[2]} ${p(a[3])}:${p(a[4])}`;
+}
+function fmtEta(v){ return fmtTime(v); }
+function shortDT(v){ return fmtTimeShort(v); }
 // 產生 datetime-local 欄位格式(YYYY-MM-DDTHH:mm)
 function nowLocalInput(d){ d = d || new Date(); const p=n=>String(n).padStart(2,'0'); return `${d.getFullYear()}-${p(d.getMonth()+1)}-${p(d.getDate())}T${p(d.getHours())}:${p(d.getMinutes())}`; }
 
@@ -1803,7 +1853,7 @@ function openDetail(id){
   const o = load().find(x=>x.id===id); if(!o) return;
   detailOpenId = id;
   document.getElementById("detailPlate").textContent = o.plate || "(無車牌)";
-  document.getElementById("detailSub").textContent = `建立於 ${o.time||"—"}`;
+  document.getElementById("detailSub").textContent = `建立於 ${o.time?fmtTime(o.time):"—"}`;
   document.getElementById("detailBody").innerHTML = buildDetail(o);
   if(o.vin && window.QRCode){
     new QRCode(document.getElementById("detailQr"), {text:o.vin, width:132, height:132, correctLevel:QRCode.CorrectLevel.M});
@@ -2000,7 +2050,7 @@ function buildQC(o){
       <div class="f"><b>車型:</b><span class="val">${(o.model||"")+" "+(o.version||"")}</span></div>
       <div class="f"><b>顏色:</b><span class="val">${o.color||""}</span></div>
       <div class="f"><b>車牌號:</b><span class="val">${o.plate||""}</span></div>
-      <div class="f"><b>進廠時間:</b><span class="val">${o.checkin||""}</span></div>
+      <div class="f"><b>進廠時間:</b><span class="val">${o.checkin?fmtTime(o.checkin):""}</span></div>
       <div class="f"><b>預計交車:</b><input value="${o.qc.eta||fmtEta(o.eta)||""}" onchange="saveQCField(${o.id},'eta',this.value)" placeholder="—"></div>
       <div class="f"><b>留鑰匙:</b><span class="val">${o.keyKept||""}　四輪定位:${o.alignment||""}</span></div>
       <div class="qc-pos"><b style="font-size:12px">損傷位置:</b>${
@@ -2137,52 +2187,67 @@ function flowHtml(o){
   let curIdx = steps.findIndex(s=>!s.t); if(curIdx<0) curIdx = 99;
   return `<div class="flow">${steps.map((s,i)=>{
     const done = !!s.t, cur = (i===curIdx);
-    return `<div class="step ${done?'done':''} ${cur?'cur':''}"><div class="dot">${done?'✓':''}</div><div class="lbl">${s.lbl}</div><div class="tm">${done?shortDT(s.t):(cur?'進行中':'')}</div></div>`;
+    return `<div class="step ${done?'done':''} ${cur?'cur':''}"><div class="dot">${done?'✓':(cur?'●':'')}</div><div class="lbl">${s.lbl}</div><div class="tm">${done?shortDT(s.t):(cur?'進行中':'')}</div></div>`;
   }).join("")}</div>`;
+}
+let woExpanded = new Set();
+function toggleCard(id, btn){
+  const card = btn.closest(".wo"); if(!card) return;
+  const now = !woExpanded.has(id);
+  if(now){ woExpanded.add(id); card.classList.add("expanded"); btn.textContent = "收合 ▲"; }
+  else   { woExpanded.delete(id); card.classList.remove("expanded"); btn.textContent = "詳情 ▼"; }
 }
 function cardHtml(o){
     const st = STATUS[o.status] || STATUS[0];
+    const exp = woExpanded.has(o.id);
+    // 精簡卡片:只放重點 chips
+    const keyChips = [
+      o.paymentLabel?`<span class="chip pay">💳 ${o.paymentLabel}</span>`:"",
+      (o.damage&&o.damage.length)?`<span class="chip dmg">🔧 損傷 ${o.damage.length} 處</span>`:"",
+      o.eta?`<span class="chip eta">🚗 預計 ${fmtTimeShort(o.eta)}</span>`:"",
+    ].filter(Boolean).join("");
+    // 展開才顯示的完整明細
+    const moreChips = [
+      o.model?`<span class="chip">🚙 ${o.model} ${o.year||""} ${o.version||""}</span>`:"",
+      o.color?`<span class="chip">🎨 ${o.color}</span>`:"",
+      o.checkin?`<span class="chip">🕒 接車:${fmtTime(o.checkin)}</span>`:"",
+      o.dispatchAt?`<span class="chip" style="background:#fef3c7;color:#92400e">🔧 派工鈑金:${fmtTime(o.dispatchAt)}</span>`:"",
+      o.entryTime?`<span class="chip">進場:${fmtTime(o.entryTime)}</span>`:"",
+      o.finishTime?`<span class="chip">完工:${fmtTime(o.finishTime)}</span>`:"",
+      o.exitTime?`<span class="chip">出場:${fmtTime(o.exitTime)}</span>`:"",
+      o.keyKept?`<span class="chip">🔑 鑰匙:${o.keyKept}</span>`:"",
+      o.alignment?`<span class="chip">四輪定位:${o.alignment}</span>`:"",
+    ].filter(Boolean).join("");
     return `
-    <div class="wo">
+    <div class="wo ${exp?'expanded':''}" data-id="${o.id}">
       <div class="top">
-        <div>
-          <div class="plate">${o.plate||"(無車牌)"}
-            ${o.workNo?`<span style="font-size:12px;color:var(--muted);font-weight:600">#${o.workNo}</span>`:""}
-            <span style="font-size:12px;color:${statusColor(o.status)}">● ${st.en}(${st.zh})</span>
-          </div>
-          <div class="meta">建立:${o.time}</div>
-          <div class="meta">專員:<b style="color:#7c3aed">${o.receptionist||"—"}</b> ｜ 鈑金技師:<b style="color:${bodyTechText(o)?'var(--accent)':'var(--muted)'}">${bodyTechText(o)||"未指派"}</b></div>
+        <div style="min-width:0">
+          <div class="plate">${o.plate||"(無車牌)"}${o.workNo?`<span class="wno">#${o.workNo}</span>`:""}</div>
+          <div class="meta"><span class="st-pill" style="color:${statusColor(o.status)};border-color:${statusColor(o.status)}44;background:${statusColor(o.status)}12">● ${st.zh}</span> <span class="dim">建立 ${fmtTimeShort(o.time)}</span></div>
+          <div class="meta">👤 <b style="color:#7c3aed">${o.receptionist||"—"}</b>　🔧 <b style="color:${bodyTechText(o)?'var(--accent)':'var(--muted)'}">${bodyTechText(o)||"未指派"}</b></div>
         </div>
-        <button class="del" title="刪除" onclick="delOrder(${o.id})">×</button>
+        <button class="del" title="刪除" onclick="event.stopPropagation();delOrder(${o.id})">×</button>
       </div>
       ${flowHtml(o)}
-      <div class="chips">
-        ${o.model?`<span class="chip">${o.model} ${o.year||""} ${o.version||""}</span>`:""}
-        ${o.color?`<span class="chip">${o.color}</span>`:""}
-        ${o.paymentLabel?`<span class="chip" style="background:#e0e7ff;color:#3730a3">💳 ${o.paymentLabel}</span>`:""}
-        ${o.checkin?`<span class="chip">🕒 接車:${o.checkin}</span>`:""}
-        ${o.dispatchAt?`<span class="chip" style="background:#fef3c7;color:#92400e">🔧 派工鈑金:${fmtDispatch(o.dispatchAt)}</span>`:""}
-        ${o.entryTime?`<span class="chip">進場:${fmtEta(o.entryTime)}</span>`:""}
-        ${o.finishTime?`<span class="chip">完工:${fmtEta(o.finishTime)}</span>`:""}
-        ${o.exitTime?`<span class="chip">出場:${fmtEta(o.exitTime)}</span>`:""}
-        ${o.eta?`<span class="chip">🚗 預計交車:${fmtEta(o.eta)}</span>`:""}
-        ${o.keyKept?`<span class="chip">🔑 鑰匙:${o.keyKept}</span>`:""}
-        ${o.alignment?`<span class="chip">四輪定位:${o.alignment}</span>`:""}
-      </div>
-      ${(o.caseNo||o.agent||o.agentPhone)?`<div class="meta" style="margin-top:4px">案號:${o.caseNo||"—"} ｜ 經辦:${o.agent||"—"} ｜ ${o.agentPhone?`<a href="tel:${telHref(o.agentPhone)}" onclick="event.stopPropagation()">📞 ${o.agentPhone}</a>`:"—"}</div>`:""}
-      ${(o.damage&&o.damage.length)?`<div class="chips">${o.damage.map(d=>`<span class="chip dmg">${d.part}${d.mode?"·"+d.mode:""}</span>`).join("")}</div>`:""}
-      ${claimSummary(o)}
-      ${o.note?`<div class="meta" style="margin-top:8px">📝 備註:${o.note}</div>`:""}
-      <div style="margin-top:10px;display:flex;flex-wrap:wrap;gap:8px">
-        <button class="mini" onclick="openDetail(${o.id})">📄 原始資料 / 掃碼</button>
-        <button class="mini" onclick="openQC(${o.id})">📋 完檢表</button>
-        <button class="mini" onclick="openCase(${o.id})">🖨️ 列印案號紙</button>
-      </div>
-      <div style="margin-top:10px;display:flex;align-items:center;gap:8px">
-        <span style="font-size:12px;color:var(--muted)">進度</span>
-        <select class="status-sel" onchange="setStatus(${o.id}, this.value)">
+      ${keyChips?`<div class="chips">${keyChips}</div>`:""}
+      <div class="wo-bar">
+        <select class="status-sel" onclick="event.stopPropagation()" onchange="setStatus(${o.id}, this.value)">
           ${STATUS.map((s,i)=>`<option value="${i}" ${i===o.status?"selected":""}>${s.en}(${s.zh})</option>`).join("")}
         </select>
+        <button class="mini expand-btn" onclick="toggleCard(${o.id}, this)">${exp?'收合 ▲':'詳情 ▼'}</button>
+      </div>
+      <div class="wo-more">
+        ${moreChips?`<div class="chips">${moreChips}</div>`:""}
+        ${(o.caseNo||o.agent||o.agentPhone)?`<div class="meta" style="margin-top:6px">案號:${o.caseNo||"—"} ｜ 經辦:${o.agent||"—"} ｜ ${o.agentPhone?`<a href="tel:${telHref(o.agentPhone)}" onclick="event.stopPropagation()">📞 ${o.agentPhone}</a>`:"—"}</div>`:""}
+        ${(o.damage&&o.damage.length)?`<div class="chips">${o.damage.map(d=>`<span class="chip dmg">${d.part}${d.mode?"·"+d.mode:""}</span>`).join("")}</div>`:""}
+        ${claimSummary(o)}
+        ${o.note?`<div class="meta" style="margin-top:8px">📝 ${o.note}</div>`:""}
+        <div class="wo-actions">
+          <button class="mini" onclick="editOrder(${o.id})">✏️ 修改 / 追加</button>
+          <button class="mini" onclick="openDetail(${o.id})">📄 原始資料 / 掃碼</button>
+          <button class="mini" onclick="openQC(${o.id})">📋 完檢表</button>
+          <button class="mini" onclick="openCase(${o.id})">🖨️ 案號紙</button>
+        </div>
       </div>
     </div>`;
 }
@@ -2245,7 +2310,7 @@ function renderWO(){
 // 對齊「Taichung 鈑噴維修車輛表」施工表欄位
 const TABLE_COLS = ["項次","車牌","鈑金","鈑金工資","噴漆工資","土底","噴漆","打蠟","車型","顏色","VIN","施工部位","輪框送修","車輛入廠日","SA派工","鈑金派工","噴漆派工","完工日","交車日期","狀態","付款","備註","保險公司","接待","維修工單","接車狀況備註","返修","返修原因"];
 function ymd(ts){ const d=new Date(ts); return `${d.getFullYear()}/${String(d.getMonth()+1).padStart(2,'0')}/${String(d.getDate()).padStart(2,'0')}`; }
-function dOnly(v){ if(v==null||v==="") return ""; if(typeof v==="number") return ymd(v); return String(v).replace("T"," ").split(" ")[0]; }
+function dOnly(v){ if(v==null||v==="") return ""; if(typeof v==="number") return ymd(v); const a=_parseTimeParts(v); if(a) return `${a[0]}/${a[1]}/${a[2]}`; return String(v).replace("T"," ").split(" ")[0]; }
 function secBy(o,k){ return ((o.punch||{})[k]||{}).by || ""; }
 function secStart(o,k){ return ((o.punch||{})[k]||{}).start || ""; }
 function rowData(o, idx){
