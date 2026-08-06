@@ -2232,7 +2232,7 @@ function cardHtml(o){
         <div style="min-width:0">
           <div class="plate">${o.plate||"(無車牌)"}${o.workNo?`<span class="wno">#${o.workNo}</span>`:""}</div>
           <div class="meta"><span class="st-pill" style="color:${statusColor(o.status)};border-color:${statusColor(o.status)}44;background:${statusColor(o.status)}12">● ${st.zh}</span></div>
-          <div class="meta">👤 <b style="color:#7c3aed">${o.receptionist||"—"}</b>　🔧 <b style="color:${bodyTechText(o)?'var(--accent)':'var(--muted)'}">${bodyTechText(o)||"未指派"}</b></div>
+          <div class="meta"><span style="white-space:nowrap">👤 <b style="color:#7c3aed">${o.receptionist||"—"}</b></span><span style="white-space:nowrap">🔧 <b style="color:${bodyTechText(o)?'var(--accent)':'var(--muted)'}">${bodyTechText(o)||"未指派"}</b></span></div>
         </div>
         <button class="del" title="刪除" onclick="event.stopPropagation();delOrder(${o.id})">×</button>
       </div>
