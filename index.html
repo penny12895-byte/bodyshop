@@ -1178,15 +1178,20 @@ function renderDispatchTime(){
   else { box.style.display = "none"; }
 }
 // 選擇接待專員時自動打卡接車(第一次選擇即記錄時間;之後換人只更新名字)
+// 接車打卡 → 同步帶入「時間紀錄 · 進場時間」(進場時間 = 接車打卡時間)
+function syncEntryTime(now){
+  const et = document.getElementById("entryTime");
+  if(et) et.value = nowLocalInput(now);
+}
 function onReceptionistChange(){
   const rec = val("receptionist");
   if(!rec) return;
   const now = new Date();
   const firstTime = !checkinTime;
-  if(!checkinTime) checkinTime = now.toLocaleString("zh-TW", {hour12:false});
-  // 選擇專員 → 自動打卡接車,並同步帶入「時間紀錄 · 進場時間」
-  const et = document.getElementById("entryTime");
-  if(et && !et.value) et.value = nowLocalInput(now);
+  if(firstTime){
+    checkinTime = now.toLocaleString("zh-TW", {hour12:false});
+    syncEntryTime(now);   // 首次選專員即打卡接車並帶入進場時間
+  }
   const el = document.getElementById("punchTime");
   el.textContent = `🕒 接車:${staffLabel(rec)} · ${checkinTime}`;
   el.classList.remove("empty");
@@ -1197,8 +1202,7 @@ function punchIn(){
   if(!rec){ toast("請先選擇接待專員再打卡", true); return; }
   const now = new Date();
   checkinTime = now.toLocaleString("zh-TW", {hour12:false});
-  const et = document.getElementById("entryTime");
-  if(et && !et.value) et.value = nowLocalInput(now);
+  syncEntryTime(now);   // 手動打卡也一律同步進場時間
   const el = document.getElementById("punchTime");
   el.textContent = `🕒 接車:${staffLabel(rec)} · ${checkinTime}`;
   el.classList.remove("empty");
@@ -2200,23 +2204,24 @@ function toggleCard(id, btn){
 function cardHtml(o){
     const st = STATUS[o.status] || STATUS[0];
     const exp = woExpanded.has(o.id);
-    // 精簡卡片:只放重點 chips
+    // 精簡卡片重點(置頂):車型 / 車色 / 鑰匙 / 四輪定位 / 預計交車
     const keyChips = [
-      o.paymentLabel?`<span class="chip pay">💳 ${o.paymentLabel}</span>`:"",
-      (o.damage&&o.damage.length)?`<span class="chip dmg">🔧 損傷 ${o.damage.length} 處</span>`:"",
-      o.eta?`<span class="chip eta">🚗 預計 ${fmtTimeShort(o.eta)}</span>`:"",
-    ].filter(Boolean).join("");
-    // 展開才顯示的完整明細
-    const moreChips = [
       o.model?`<span class="chip">🚙 ${o.model} ${o.year||""} ${o.version||""}</span>`:"",
       o.color?`<span class="chip">🎨 ${o.color}</span>`:"",
+      o.keyKept?`<span class="chip">🔑 鑰匙:${o.keyKept}</span>`:"",
+      o.alignment?`<span class="chip">🎯 四輪定位:${o.alignment}</span>`:"",
+      o.eta?`<span class="chip eta">🚗 預計 ${fmtTimeShort(o.eta)}</span>`:"",
+    ].filter(Boolean).join("");
+    // 損傷部位(置頂,獨立一列)
+    const dmgChips = (o.damage&&o.damage.length)?`<div class="chips">${o.damage.map(d=>`<span class="chip dmg">${d.part}${d.mode?"·"+d.mode:""}</span>`).join("")}</div>`:"";
+    // 展開才顯示的明細:付款 / 各時間
+    const moreChips = [
+      o.paymentLabel?`<span class="chip pay">💳 ${o.paymentLabel}</span>`:"",
       o.checkin?`<span class="chip">🕒 接車:${fmtTime(o.checkin)}</span>`:"",
       o.dispatchAt?`<span class="chip" style="background:#fef3c7;color:#92400e">🔧 派工鈑金:${fmtTime(o.dispatchAt)}</span>`:"",
       o.entryTime?`<span class="chip">進場:${fmtTime(o.entryTime)}</span>`:"",
       o.finishTime?`<span class="chip">完工:${fmtTime(o.finishTime)}</span>`:"",
       o.exitTime?`<span class="chip">出場:${fmtTime(o.exitTime)}</span>`:"",
-      o.keyKept?`<span class="chip">🔑 鑰匙:${o.keyKept}</span>`:"",
-      o.alignment?`<span class="chip">四輪定位:${o.alignment}</span>`:"",
     ].filter(Boolean).join("");
     return `
     <div class="wo ${exp?'expanded':''}" data-id="${o.id}">
@@ -2230,6 +2235,7 @@ function cardHtml(o){
       </div>
       ${flowHtml(o)}
       ${keyChips?`<div class="chips">${keyChips}</div>`:""}
+      ${dmgChips}
       <div class="wo-bar">
         <select class="status-sel" onclick="event.stopPropagation()" onchange="setStatus(${o.id}, this.value)">
           ${STATUS.map((s,i)=>`<option value="${i}" ${i===o.status?"selected":""}>${s.en}(${s.zh})</option>`).join("")}
@@ -2239,7 +2245,6 @@ function cardHtml(o){
       <div class="wo-more">
         ${moreChips?`<div class="chips">${moreChips}</div>`:""}
         ${(o.caseNo||o.agent||o.agentPhone)?`<div class="meta" style="margin-top:6px">案號:${o.caseNo||"—"} ｜ 經辦:${o.agent||"—"} ｜ ${o.agentPhone?`<a href="tel:${telHref(o.agentPhone)}" onclick="event.stopPropagation()">📞 ${o.agentPhone}</a>`:"—"}</div>`:""}
-        ${(o.damage&&o.damage.length)?`<div class="chips">${o.damage.map(d=>`<span class="chip dmg">${d.part}${d.mode?"·"+d.mode:""}</span>`).join("")}</div>`:""}
         ${claimSummary(o)}
         ${o.note?`<div class="meta" style="margin-top:8px">📝 ${o.note}</div>`:""}
         <div class="wo-actions">
