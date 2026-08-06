@@ -2223,7 +2223,7 @@ function cardHtml(o){
     const keyChips = [
       o.keyKept?`<span class="chip">🔑 鑰匙:${o.keyKept}</span>`:"",
       o.alignment?`<span class="chip">🎯 四輪定位:${o.alignment}</span>`:"",
-      o.eta?`<span class="chip eta">🚗 預計 ${fmtTimeShort(o.eta)}</span>`:"",
+      o.eta?`<span class="chip eta">🚗 預計交車 ${fmtTimeShort(o.eta)}</span>`:"",
     ].filter(Boolean).join("");
     // 損傷部位(置頂,獨立一列)
     const dmgChips = (o.damage&&o.damage.length)?`<div class="chips">${o.damage.map(d=>`<span class="chip dmg">${d.part}${d.mode?"·"+d.mode:""}</span>`).join("")}</div>`:"";
