@@ -765,7 +765,7 @@
       <button class="btn-ghost" onclick="captureVinOCR()">📸 即時拍照辨識</button>
       <button class="btn-primary" onclick="document.getElementById('vinFile').click()">📁 用相機拍高畫質照片</button>
     </div>
-    <div class="hint" style="margin-top:10px"><b>辨識不出來時,請按「📁 用相機拍高畫質照片」</b>——會叫出手機原生相機,對焦更清楚、成功率最高。<br>拍攝要點:靠近到 VIN 貼紙填滿畫面、正對(不要斜)、避開反光。第一次辨識需下載模組(約數 MB)。</div>
+    <div class="hint" style="margin-top:10px"><b>辨識不出來時,請按「📁 用相機拍高畫質照片」</b>——會叫出手機原生相機,對焦最準、成功率最高。系統會優先讀貼紙左邊的<b>方形 2D 條碼</b>,讀不到才用文字辨識。<br><b>拍攝要點:</b>手機離貼紙約 15–20 公分(太近會對不到焦),改用<b>兩指放大 zoom</b>拉近;<b>點一下畫面對焦</b>;正對不要斜、避開反光。第一次辨識需下載模組(約數 MB)。</div>
   </div>
 </div>
 
@@ -2217,71 +2217,172 @@ async function getVinWorker(){
   vinWorker = await Tesseract.createWorker("eng");
   await vinWorker.setParameters({
     tessedit_char_whitelist: "ABCDEFGHJKLMNPRSTUVWXYZ0123456789",
-    tessedit_pageseg_mode: "7", // 單行
     user_defined_dpi: "300"
   });
   return vinWorker;
 }
+async function ocrTextPsm(cv, psm){
+  const w = await getVinWorker();
+  await w.setParameters({ tessedit_pageseg_mode: String(psm) });
+  const { data } = await w.recognize(cv);
+  return data.text || "";
+}
 
-// 從來源(video/img/canvas)裁切某區域,放大 + 灰階增對比(可反相),回傳 canvas
-function prepCanvas(src, sx, sy, sw, sh, scale, invert){
+// ====== ZXing:解 VIN 貼紙左邊的 2D 條碼(Data Matrix / QR / PDF417),iPhone 也能用 ======
+function ensureZXing(){
+  if(window.ZXing) return Promise.resolve();
+  return new Promise((res, rej)=>{
+    const s = document.createElement("script");
+    s.src = "https://cdn.jsdelivr.net/npm/@zxing/library@0.21.3/umd/index.min.js";
+    s.onload = ()=>res();
+    s.onerror = ()=>rej(new Error("無法載入條碼模組"));
+    document.head.appendChild(s);
+  });
+}
+async function zxTryDecode(canvas){
+  try{
+    await ensureZXing();
+    const hints = new Map();
+    hints.set(ZXing.DecodeHintType.TRY_HARDER, true);
+    hints.set(ZXing.DecodeHintType.POSSIBLE_FORMATS, [
+      ZXing.BarcodeFormat.DATA_MATRIX, ZXing.BarcodeFormat.QR_CODE,
+      ZXing.BarcodeFormat.PDF_417, ZXing.BarcodeFormat.AZTEC,
+      ZXing.BarcodeFormat.CODE_128, ZXing.BarcodeFormat.CODE_39
+    ]);
+    const reader = new ZXing.MultiFormatReader();
+    reader.setHints(hints);
+    const lum = new ZXing.HTMLCanvasElementLuminanceSource(canvas);
+    // 先試 Hybrid,再試 Global 二值化
+    for(const Bin of [ZXing.HybridBinarizer, ZXing.GlobalHistogramBinarizer]){
+      try{
+        const bmp = new ZXing.BinaryBitmap(new Bin(lum));
+        const r = reader.decode(bmp);
+        if(r && r.getText()) return r.getText();
+      }catch(e){}
+      reader.reset && reader.reset();
+    }
+  }catch(e){}
+  return null;
+}
+
+// 從來源裁切某區域,放大 + 灰階增對比(可反相 / 可合併點陣),回傳 canvas
+function prepCanvas(src, sx, sy, sw, sh, scale, invert, merge){
+  const W = Math.round(sw*scale), H = Math.round(sh*scale);
   const cv = document.createElement("canvas");
-  cv.width = Math.round(sw*scale); cv.height = Math.round(sh*scale);
+  cv.width = W; cv.height = H;
   const ctx = cv.getContext("2d");
   ctx.imageSmoothingEnabled = true; ctx.imageSmoothingQuality = "high";
-  ctx.drawImage(src, sx, sy, sw, sh, 0, 0, cv.width, cv.height);
+  ctx.drawImage(src, sx, sy, sw, sh, 0, 0, W, H);
   try{
-    const img = ctx.getImageData(0,0,cv.width,cv.height);
+    const img = ctx.getImageData(0,0,W,H);
     const d = img.data;
-    for(let i=0;i<d.length;i+=4){
+    const gray = new Float32Array(W*H);
+    for(let i=0,p=0;i<d.length;i+=4,p++){
       let g = 0.299*d[i] + 0.587*d[i+1] + 0.114*d[i+2];
-      g = (g-128)*1.7 + 128;            // 拉高對比
-      g = g<0?0:(g>255?255:g);
+      g = (g-128)*1.8 + 128;            // 拉高對比
       if(invert) g = 255-g;
-      d[i]=d[i+1]=d[i+2]=g;
+      gray[p] = g<0?0:(g>255?255:g);
     }
+    let out = gray;
+    if(merge){
+      // 3x3 模糊,把點陣字的小點連成筆畫,再二值化
+      const blur = new Float32Array(W*H);
+      for(let y=0;y<H;y++){
+        for(let x=0;x<W;x++){
+          let s=0,n=0;
+          for(let dy=-1;dy<=1;dy++)for(let dx=-1;dx<=1;dx++){
+            const xx=x+dx, yy=y+dy;
+            if(xx>=0&&xx<W&&yy>=0&&yy<H){ s+=gray[yy*W+xx]; n++; }
+          }
+          blur[y*W+x]=s/n;
+        }
+      }
+      let sum=0; for(let p=0;p<blur.length;p++) sum+=blur[p];
+      const th = sum/blur.length - 8;   // 略低於平均當門檻
+      for(let p=0;p<blur.length;p++) blur[p] = blur[p]>th ? 255 : 0;
+      out = blur;
+    }
+    for(let p=0,i=0;p<out.length;p++,i+=4){ d[i]=d[i+1]=d[i+2]=out[p]; }
     ctx.putImageData(img,0,0);
   }catch(e){}
   return cv;
 }
 
-async function ocrText(cv){
-  const w = await getVinWorker();
-  const { data } = await w.recognize(cv);
-  return data.text || "";
+function bestGuess(text){
+  const s = cleanVinText(text);
+  const pref = s.match(/(5YJ|7SA|LRW|XP7|SFZ)[A-HJ-NPR-Z0-9]{0,14}/);
+  if(pref) return pref[0].slice(0,17);
+  const runs = s.match(/[A-HJ-NPR-Z0-9]{6,}/g) || [];
+  runs.sort((a,b)=>b.length-a.length);
+  return (runs[0]||"").slice(0,17);
 }
 
-// 對來源做多種嘗試:置中橫帶(正/反相)+ 整張(正/反相)
-async function runVinFrom(src, W, H){
+// 主流程:先試 2D 條碼,再多組 OCR
+async function runVinFrom(baseCanvas, isLive){
   const st = document.getElementById("vinScanStatus");
+  const W = baseCanvas.width, H = baseCanvas.height;
+
+  // 1) 先試 2D 條碼(最可靠)
+  st.textContent = "解讀條碼中…";
+  let bc = await zxTryDecode(baseCanvas);
+  if(!bc){ // 放大再試一次,小條碼較容易被讀到
+    const up = prepCanvas(baseCanvas, 0, 0, W, H, Math.min(2, 2400/Math.max(W,H)+1), false, false);
+    bc = await zxTryDecode(up);
+  }
+  if(bc){ const vin = extractVin(bc) || bestGuess(bc); if(vin && vin.length>=11){ applyScannedVin(vin, "2D條碼"); return; } }
+
+  // 2) OCR 多組嘗試
   st.textContent = "辨識中…(第一次需下載辨識模組,約數 MB,請稍候)";
-  const band = { sx: W*0.02, sy: H*0.34, sw: W*0.96, sh: H*0.32 };
-  const attempts = [
-    { sx: band.sx, sy: band.sy, sw: band.sw, sh: band.sh, scale: 3, inv: false },
-    { sx: band.sx, sy: band.sy, sw: band.sw, sh: band.sh, scale: 3, inv: true  },
-    { sx: 0, sy: 0, sw: W, sh: H, scale: 2, inv: false },
-    { sx: 0, sy: 0, sw: W, sh: H, scale: 2, inv: true  },
-  ];
+  let attempts;
+  if(isLive){
+    const b = { sx: W*0.02, sy: H*0.30, sw: W*0.96, sh: H*0.40 };
+    attempts = [
+      {c:()=>prepCanvas(baseCanvas,b.sx,b.sy,b.sw,b.sh,3,false,false),psm:6},
+      {c:()=>prepCanvas(baseCanvas,b.sx,b.sy,b.sw,b.sh,3,true ,false),psm:6},
+      {c:()=>prepCanvas(baseCanvas,b.sx,b.sy,b.sw,b.sh,3,false,true ),psm:6},
+    ];
+  } else {
+    attempts = [
+      {c:()=>prepCanvas(baseCanvas,0,0,W,H,1.6,false,false),psm:11},
+      {c:()=>prepCanvas(baseCanvas,0,0,W,H,1.6,true ,false),psm:11},
+      {c:()=>prepCanvas(baseCanvas,0,0,W,H,1.8,false,true ),psm:11},
+      {c:()=>prepCanvas(baseCanvas,0,0,W,H,1.8,true ,true ),psm:11},
+      {c:()=>prepCanvas(baseCanvas,0,0,W,H,2.2,false,false),psm:6},
+    ];
+  }
   let lastRead = "";
   for(let k=0;k<attempts.length;k++){
-    const a = attempts[k];
     st.textContent = "辨識中… (" + (k+1) + "/" + attempts.length + ")";
     let text = "";
-    try{ text = await ocrText(prepCanvas(src, a.sx, a.sy, a.sw, a.sh, a.scale, a.inv)); }
+    try{ text = await ocrTextPsm(attempts[k].c(), attempts[k].psm); }
     catch(e){ st.textContent = "辨識失敗:" + (e.message || e); return; }
     if(text.trim()) lastRead = text;
     const vin = extractVin(text);
     if(vin){ applyScannedVin(vin, "文字"); return; }
   }
-  const guess = cleanVinText(lastRead).slice(0,17);
-  st.textContent = "讀不太清楚。讀到:「" + (guess || "(空白)") + "」。請按「📁 用相機拍高畫質照片」靠近正對再拍,或直接在欄位手動輸入。";
+
+  // 3) 近似結果:帶入讓人核對
+  const guess = bestGuess(lastRead);
+  if(guess && guess.length>=8){
+    const el = document.getElementById("vin");
+    el.value = guess; el.dispatchEvent(new Event("input"));
+    if(guess.length===17) doDecode();
+    toast("辨識可能不完整,請核對", true);
+    st.textContent = "讀到:「" + guess + "」已帶入,請關閉視窗在 VIN 欄位核對/補齊。";
+    closeVinScan();
+  } else {
+    st.textContent = "讀不到清楚的 VIN。建議:換角度避開反光;用「📁 拍高畫質照片」時可用兩指放大(zoom)取代靠太近,並點畫面對焦。";
+  }
 }
 
 // 即時影像拍照辨識
 async function captureVinOCR(){
   const v = document.getElementById("vinVideo");
   if(!v.videoWidth){ toast("相機尚未就緒", true); return; }
-  await runVinFrom(v, v.videoWidth, v.videoHeight);
+  const base = document.createElement("canvas");
+  base.width = v.videoWidth; base.height = v.videoHeight;
+  base.getContext("2d").drawImage(v, 0, 0, base.width, base.height);
+  await runVinFrom(base, true);
 }
 
 // 用手機原生相機拍高畫質照片後辨識(成功率最高)
@@ -2294,12 +2395,12 @@ function onVinFile(ev){
   const img = new Image();
   img.onload = ()=>{
     let W = img.naturalWidth, H = img.naturalHeight;
-    const max = 2000, s = Math.min(1, max/Math.max(W,H));
+    const max = 2400, s = Math.min(1, max/Math.max(W,H)); // 保留較高解析度給條碼
     W = Math.round(W*s); H = Math.round(H*s);
     const base = document.createElement("canvas");
     base.width = W; base.height = H;
     base.getContext("2d").drawImage(img, 0, 0, W, H);
-    runVinFrom(base, W, H);
+    runVinFrom(base, false);
   };
   img.onerror = ()=>{ st.textContent = "照片讀取失敗,請再試一次。"; };
   img.src = URL.createObjectURL(f);
