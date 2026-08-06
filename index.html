@@ -23,7 +23,7 @@
   html{scroll-behavior:smooth}
   ::selection{background:rgba(232,33,39,.16)}
   body{
-    margin:0; font-family:"Segoe UI","PingFang TC","Microsoft JhengHei","Noto Sans TC",system-ui,sans-serif;
+    margin:0; font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang TC","Microsoft JhengHei","Noto Sans TC",system-ui,"Helvetica Neue",Arial,sans-serif;
     background:
       radial-gradient(1100px 520px at 100% -12%, rgba(232,33,39,.06), transparent 58%),
       radial-gradient(900px 500px at -10% 0%, rgba(37,99,235,.05), transparent 55%),
@@ -177,8 +177,11 @@
   .wo-stats .st::before{content:""; position:absolute; left:0; top:0; width:100%; height:3px; background:var(--accent)}
   .wo-stats .st.info::before{background:var(--accent2)}
   .wo-stats .st.ok::before{background:var(--ok)}
-  .wo-stats .st .ic{font-size:14px; display:block; line-height:1; margin-bottom:3px; opacity:.9}
-  .wo-stats .st b{display:block; font-size:24px; font-weight:800; color:var(--accent); line-height:1.1}
+  .wo-stats .st .ic{display:block; line-height:0; margin-bottom:5px; color:var(--accent)}
+  .wo-stats .st .ic svg{display:block; margin:0 auto}
+  .wo-stats .st.info .ic{color:var(--accent2)}
+  .wo-stats .st.ok .ic{color:var(--ok)}
+  .wo-stats .st b{display:block; font-size:25px; font-weight:800; color:var(--accent); line-height:1.1; font-variant-numeric:tabular-nums; letter-spacing:.5px}
   .wo-stats .st.info b{color:var(--accent2)}
   .wo-stats .st.ok b{color:var(--ok)}
   .wo-stats .st .lb{font-size:11px; color:var(--muted); font-weight:600}
@@ -405,6 +408,19 @@
 </style>
 </head>
 <body>
+<script>
+  /* 永遠載入最新版:清掉舊版 Service Worker 與快取,避免手機停在舊畫面 */
+  (function(){
+    try{
+      if('serviceWorker' in navigator){
+        navigator.serviceWorker.getRegistrations().then(function(rs){ rs.forEach(function(r){ r.unregister(); }); }).catch(function(){});
+      }
+      if(window.caches && caches.keys){
+        caches.keys().then(function(ks){ ks.forEach(function(k){ caches.delete(k); }); }).catch(function(){});
+      }
+    }catch(e){}
+  })();
+</script>
 <header>
   <span class="logo">TESLA</span>
   <div>
@@ -2251,7 +2267,7 @@ function cardHtml(o){
         <div style="min-width:0">
           <div class="plate">${o.plate||"(無車牌)"}${o.model?`<span class="model-tag">${shortModel(o.model)}</span>`:""}${o.color?`<span class="color-tag" style="${colorStyle(o.color)}">${o.color}</span>`:""}${o.workNo?`<span class="wno">#${o.workNo}</span>`:""}</div>
           <div class="meta"><span class="st-pill" style="color:${statusColor(o.status)};border-color:${statusColor(o.status)}44;background:${statusColor(o.status)}12">● ${st.zh}</span></div>
-          <div class="meta"><span style="white-space:nowrap">👤 <b style="color:#7c3aed">${o.receptionist||"—"}</b></span><span style="white-space:nowrap">🔧 <b style="color:${bodyTechText(o)?'var(--accent)':'var(--muted)'}">${bodyTechText(o)||"未指派"}</b></span></div>
+          <div class="meta"><span style="white-space:nowrap">🧑‍💻 <b style="color:#7c3aed">${o.receptionist||"—"}</b></span><span style="white-space:nowrap">👨‍🔧 <b style="color:${bodyTechText(o)?'var(--accent)':'var(--muted)'}">${bodyTechText(o)||"未指派"}</b></span></div>
         </div>
         <button class="del" title="刪除" onclick="event.stopPropagation();delOrder(${o.id})">×</button>
       </div>
@@ -2319,10 +2335,14 @@ function renderStats(){
   const delivered = list.filter(o=>!!o.exitTime).length;
   const todayIn = list.filter(o=>new Date(o.id).toDateString()===todayStr).length;
   const box = document.getElementById("woStats");
+  // 情境圖示:在廠中=車停在鈑金廠內;今日接車=車開進廠;已交車=車離場
+  const svgInShop = `<svg viewBox="0 0 40 30" width="34" height="26" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 14 L20 5 L35 14"/><path d="M7 14 V25 H33 V14"/><rect x="11" y="17" width="18" height="5" rx="1.6" fill="currentColor" stroke="none"/><path d="M14 17 l2 -3 h7 l3 3" fill="currentColor" stroke="none"/><circle cx="14.5" cy="23" r="1.8" fill="currentColor" stroke="none"/><circle cx="25.5" cy="23" r="1.8" fill="currentColor" stroke="none"/></svg>`;
+  const svgIn = `<svg viewBox="0 0 44 30" width="36" height="26" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M30 13 L35 8 L40 13"/><path d="M31 13 V25 H40"/><rect x="33" y="16" width="5" height="9" rx="1" fill="currentColor" stroke="none" opacity=".28"/><rect x="4" y="14" width="14" height="5" rx="1.6" fill="currentColor" stroke="none"/><path d="M7 14 l2 -3 h6 l2 3" fill="currentColor" stroke="none"/><circle cx="7.5" cy="20" r="1.7" fill="currentColor" stroke="none"/><circle cx="15" cy="20" r="1.7" fill="currentColor" stroke="none"/><path d="M20 13 h5 m-2.5 -2.5 L25 13 l-2.5 2.5"/></svg>`;
+  const svgOut = `<svg viewBox="0 0 44 30" width="36" height="26" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12 h7 M1 17 h8 M3 22 h6"/><rect x="13" y="14" width="16" height="5" rx="1.6" fill="currentColor" stroke="none"/><path d="M16 14 l2 -3 h7 l3 3" fill="currentColor" stroke="none"/><circle cx="17" cy="20" r="1.8" fill="currentColor" stroke="none"/><circle cx="26" cy="20" r="1.8" fill="currentColor" stroke="none"/><path d="M33 16 h6 m-2.5 -2.5 L39 16 l-2.5 2.5"/></svg>`;
   if(box) box.innerHTML =
-    `<div class="st info"><span class="ic">🚗</span><b>${inShop}</b><span class="lb">在廠中</span></div>`+
-    `<div class="st"><span class="ic">📥</span><b>${todayIn}</b><span class="lb">今日接車</span></div>`+
-    `<div class="st ok"><span class="ic">✅</span><b>${delivered}</b><span class="lb">已交車</span></div>`;
+    `<div class="st info"><span class="ic">${svgInShop}</span><b>${inShop}</b><span class="lb">在廠中</span></div>`+
+    `<div class="st"><span class="ic">${svgIn}</span><b>${todayIn}</b><span class="lb">今日接車</span></div>`+
+    `<div class="st ok"><span class="ic">${svgOut}</span><b>${delivered}</b><span class="lb">已交車</span></div>`;
 }
 function renderWO(){
   const box=document.getElementById("woList");
