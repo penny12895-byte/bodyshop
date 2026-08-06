@@ -295,8 +295,8 @@
   .wo .top{display:flex; justify-content:space-between; align-items:flex-start; gap:10px}
   .wo .plate{font-weight:800; font-size:18px; letter-spacing:1px; display:flex; align-items:baseline; gap:8px; flex-wrap:wrap}
   .wo .plate .wno{font-size:12px;color:var(--muted);font-weight:600;letter-spacing:0}
-  .wo .plate .model-tag{font-size:12px;font-weight:800;letter-spacing:.5px;padding:1px 8px;border-radius:6px;background:#111827;color:#fff}
-  .wo .plate .color-tag{font-size:11px;font-weight:700;letter-spacing:0;padding:1px 9px;border-radius:20px;background:#eef1f5;color:#48505c}
+  .wo .plate .model-tag{font-size:14px;font-weight:800;letter-spacing:.5px;color:var(--accent)}
+  .wo .plate .color-tag{font-size:11px;font-weight:700;letter-spacing:0;padding:2px 10px;border-radius:20px}
   .wo .meta{font-size:12px; color:var(--muted); margin-top:5px; display:flex; align-items:center; gap:6px; flex-wrap:wrap}
   .wo .meta .dim{color:#9aa1ac}
   .st-pill{display:inline-flex; align-items:center; gap:4px; font-size:11px; font-weight:800; padding:2px 9px; border-radius:20px; border:1px solid; line-height:1.6}
@@ -2209,6 +2209,18 @@ function shortModel(m){
   if(s.includes("MODEL3")||s==="M3"||s==="3") return "M3";
   return m;
 }
+// 車色 → 底色樣式(依實際車色呈現,淺色加邊框)
+function colorStyle(c){
+  const map={
+    "黑":["#111827","#fff"], "白":["#ffffff","#1a1d24"], "灰":["#9ca3af","#fff"],
+    "夜幕灰":["#4b5563","#fff"], "閃電銀":["#cbd5e1","#1a1d24"], "烈焰紅":["#dc2626","#fff"],
+    "櫻桃紅":["#b91c1c","#fff"], "藍":["#2563eb","#fff"], "冰河藍":["#bfdbfe","#1e3a8a"]
+  };
+  const v=map[c];
+  if(!v) return "background:#eef1f5;color:#48505c;border:1px solid var(--line)";
+  const light=(c==="白"||c==="閃電銀"||c==="冰河藍");
+  return `background:${v[0]};color:${v[1]}`+(light?";border:1px solid #d5dbe4":"");
+}
 let woExpanded = new Set();
 function toggleCard(id, btn){
   const card = btn.closest(".wo"); if(!card) return;
@@ -2235,7 +2247,7 @@ function cardHtml(o){
     <div class="wo ${exp?'expanded':''}" data-id="${o.id}">
       <div class="top">
         <div style="min-width:0">
-          <div class="plate">${o.plate||"(無車牌)"}${o.model?`<span class="model-tag">${shortModel(o.model)}</span>`:""}${o.color?`<span class="color-tag">${o.color}</span>`:""}${o.workNo?`<span class="wno">#${o.workNo}</span>`:""}</div>
+          <div class="plate">${o.plate||"(無車牌)"}${o.model?`<span class="model-tag">${shortModel(o.model)}</span>`:""}${o.color?`<span class="color-tag" style="${colorStyle(o.color)}">${o.color}</span>`:""}${o.workNo?`<span class="wno">#${o.workNo}</span>`:""}</div>
           <div class="meta"><span class="st-pill" style="color:${statusColor(o.status)};border-color:${statusColor(o.status)}44;background:${statusColor(o.status)}12">● ${st.zh}</span></div>
           <div class="meta"><span style="white-space:nowrap">👤 <b style="color:#7c3aed">${o.receptionist||"—"}</b></span><span style="white-space:nowrap">🔧 <b style="color:${bodyTechText(o)?'var(--accent)':'var(--muted)'}">${bodyTechText(o)||"未指派"}</b></span></div>
         </div>
