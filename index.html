@@ -2301,15 +2301,55 @@ async function ocrTextPsm(cv, psm){
 }
 
 // ====== ZXing:解 VIN 貼紙左邊的 2D 條碼(Data Matrix / QR / PDF417),iPhone 也能用 ======
+// 依序嘗試多個來源載入(先自架同網域,再退回 CDN)
+function loadScriptSeq(urls){
+  return new Promise((res, rej)=>{
+    let i = 0;
+    const tryNext = ()=>{
+      if(i >= urls.length){ rej(new Error("load failed")); return; }
+      const s = document.createElement("script");
+      s.src = urls[i++];
+      s.onload = ()=>res();
+      s.onerror = ()=>tryNext();
+      document.head.appendChild(s);
+    };
+    tryNext();
+  });
+}
 function ensureZXing(){
   if(window.ZXing) return Promise.resolve();
-  return new Promise((res, rej)=>{
-    const s = document.createElement("script");
-    s.src = "https://cdn.jsdelivr.net/npm/@zxing/library@0.21.3/umd/index.min.js";
-    s.onload = ()=>res();
-    s.onerror = ()=>rej(new Error("無法載入條碼模組"));
-    document.head.appendChild(s);
-  });
+  return loadScriptSeq([
+    "./zxing.min.js",   // 自架同網域(公司網路可載)
+    "https://cdn.jsdelivr.net/npm/@zxing/library@0.21.3/umd/index.min.js"
+  ]);
+}
+// 從來源裁一塊、縮放成 canvas(給條碼解讀用,不做灰階處理)
+function cropForZX(src, sx, sy, sw, sh, scale){
+  const cv = document.createElement("canvas");
+  cv.width = Math.max(1, Math.round(sw*scale));
+  cv.height = Math.max(1, Math.round(sh*scale));
+  const ctx = cv.getContext("2d");
+  ctx.imageSmoothingEnabled = true; ctx.imageSmoothingQuality = "high";
+  ctx.drawImage(src, sx, sy, sw, sh, 0, 0, cv.width, cv.height);
+  return cv;
+}
+// 對整張圖的多個區域 / 放大倍率嘗試解 2D 條碼(小條碼較難,故分區放大)
+async function zxMulti(base){
+  const W = base.width, H = base.height;
+  const R = [
+    [0, 0, W, H, 1],
+    [0, 0, W, H, 2],
+    [0, H*0.28, W, H*0.44, 2.5],       // 中央橫帶
+    [0, H*0.30, W*0.55, H*0.40, 3.5],  // 左半(條碼常在文字左邊)
+    [0, 0, W*0.6, H, 1.8],             // 左側整條
+    [0, H*0.18, W*0.75, H*0.64, 2.2],
+  ];
+  for(const [sx,sy,sw,sh,sc] of R){
+    let t = null;
+    try{ t = await zxTryDecode(cropForZX(base, sx, sy, sw, sh, sc)); }catch(e){}
+    if(t){ const vin = extractVin(t) || bestGuess(t); if(vin && vin.length>=11) return {vin, raw:t}; }
+  }
+  return null;
 }
 async function zxTryDecode(canvas){
   try{
@@ -2394,17 +2434,16 @@ async function runVinFrom(baseCanvas, isLive){
   const st = document.getElementById("vinScanStatus");
   const W = baseCanvas.width, H = baseCanvas.height;
 
-  // 1) 先試 2D 條碼(最可靠)
+  // 1) 先試 2D 條碼(最可靠;自架模組公司網路也載得到)
   st.textContent = "解讀條碼中…";
-  let bc = await zxTryDecode(baseCanvas);
-  if(!bc){ // 放大再試一次,小條碼較容易被讀到
-    const up = prepCanvas(baseCanvas, 0, 0, W, H, Math.min(2, 2400/Math.max(W,H)+1), false, false);
-    bc = await zxTryDecode(up);
+  let zxLoaded = false;
+  try{ await ensureZXing(); zxLoaded = !!window.ZXing; }catch(e){ zxLoaded = false; }
+  if(zxLoaded){
+    const hit = await zxMulti(baseCanvas);
+    if(hit){ applyScannedVin(hit.vin, "2D條碼"); return; }
   }
-  if(bc){ const vin = extractVin(bc) || bestGuess(bc); if(vin && vin.length>=11){ applyScannedVin(vin, "2D條碼"); return; } }
 
-  // 2) OCR 多組嘗試
-  st.textContent = "辨識中…(第一次需下載辨識模組,約數 MB,請稍候)";
+  // 2) OCR 文字辨識(需要 CDN 模組;公司網路可能載不到)
   let attempts;
   if(isLive){
     const b = { sx: W*0.02, sy: H*0.30, sw: W*0.96, sh: H*0.40 };
@@ -2414,23 +2453,28 @@ async function runVinFrom(baseCanvas, isLive){
       {c:()=>prepCanvas(baseCanvas,b.sx,b.sy,b.sw,b.sh,3,false,true ),psm:6},
     ];
   } else {
-    attempts = [
-      {c:()=>prepCanvas(baseCanvas,0,0,W,H,1.6,false,false),psm:11},
-      {c:()=>prepCanvas(baseCanvas,0,0,W,H,1.6,true ,false),psm:11},
-      {c:()=>prepCanvas(baseCanvas,0,0,W,H,1.8,false,true ),psm:11},
-      {c:()=>prepCanvas(baseCanvas,0,0,W,H,1.8,true ,true ),psm:11},
-      {c:()=>prepCanvas(baseCanvas,0,0,W,H,2.2,false,false),psm:6},
-    ];
+    // 整張照片:VIN 是一條水平字串,位置不定 → 用多個水平帶逐一掃描(正/反相)
+    attempts = [];
+    [0.06,0.20,0.34,0.48,0.62].forEach(cy=>{
+      const sy = Math.max(0, H*cy), sh = H*0.20;
+      attempts.push({c:()=>prepCanvas(baseCanvas,0,sy,W,sh,3,false,false),psm:7});
+      attempts.push({c:()=>prepCanvas(baseCanvas,0,sy,W,sh,3,true ,false),psm:7});
+    });
+    attempts.push({c:()=>prepCanvas(baseCanvas,0,0,W,H,1.6,false,true),psm:11});
+    attempts.push({c:()=>prepCanvas(baseCanvas,0,0,W,H,1.6,true ,true),psm:11});
   }
-  let lastRead = "";
-  for(let k=0;k<attempts.length;k++){
-    st.textContent = "辨識中… (" + (k+1) + "/" + attempts.length + ")";
-    let text = "";
-    try{ text = await ocrTextPsm(attempts[k].c(), attempts[k].psm); }
-    catch(e){ st.textContent = "辨識失敗:" + (e.message || e); return; }
-    if(text.trim()) lastRead = text;
-    const vin = extractVin(text);
-    if(vin){ applyScannedVin(vin, "文字"); return; }
+
+  let ocrLoaded = false, lastRead = "";
+  try{ await ensureTesseract(); ocrLoaded = !!window.Tesseract; }catch(e){ ocrLoaded = false; }
+  if(ocrLoaded){
+    for(let k=0;k<attempts.length;k++){
+      st.textContent = "文字辨識中… (" + (k+1) + "/" + attempts.length + ")";
+      let text = "";
+      try{ text = await ocrTextPsm(attempts[k].c(), attempts[k].psm); }catch(e){ break; }
+      if(text.trim()) lastRead = text;
+      const vin = extractVin(text);
+      if(vin){ applyScannedVin(vin, "文字"); return; }
+    }
   }
 
   // 3) 近似結果:帶入讓人核對
@@ -2442,8 +2486,12 @@ async function runVinFrom(baseCanvas, isLive){
     toast("辨識可能不完整,請核對", true);
     st.textContent = "讀到:「" + guess + "」已帶入,請關閉視窗在 VIN 欄位核對/補齊。";
     closeVinScan();
+  } else if(!zxLoaded && !ocrLoaded){
+    st.textContent = "辨識模組載入失敗——公司網路可能擋了外部資源。請改用手機 4G / 熱點再試一次(2D 條碼模組已自架,通常仍可用)。";
+  } else if(!ocrLoaded){
+    st.textContent = "這張的 2D 條碼沒讀到,且文字模組(需外部網路)載不到。請對準左邊的方形條碼、放大清楚再拍一次;或改用 4G。";
   } else {
-    st.textContent = "讀不到清楚的 VIN。建議:換角度避開反光;用「📁 拍高畫質照片」時可用兩指放大(zoom)取代靠太近,並點畫面對焦。";
+    st.textContent = "讀不到清楚的 VIN。請對準左邊的方形 2D 條碼、放大到清楚、避開反光再拍一次。";
   }
 }
 
