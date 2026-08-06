@@ -295,6 +295,8 @@
   .wo .top{display:flex; justify-content:space-between; align-items:flex-start; gap:10px}
   .wo .plate{font-weight:800; font-size:18px; letter-spacing:1px; display:flex; align-items:baseline; gap:8px; flex-wrap:wrap}
   .wo .plate .wno{font-size:12px;color:var(--muted);font-weight:600;letter-spacing:0}
+  .wo .plate .model-tag{font-size:12px;font-weight:800;letter-spacing:.5px;padding:1px 8px;border-radius:6px;background:#111827;color:#fff}
+  .wo .plate .color-tag{font-size:11px;font-weight:700;letter-spacing:0;padding:1px 9px;border-radius:20px;background:#eef1f5;color:#48505c}
   .wo .meta{font-size:12px; color:var(--muted); margin-top:5px; display:flex; align-items:center; gap:6px; flex-wrap:wrap}
   .wo .meta .dim{color:#9aa1ac}
   .st-pill{display:inline-flex; align-items:center; gap:4px; font-size:11px; font-weight:800; padding:2px 9px; border-radius:20px; border:1px solid; line-height:1.6}
@@ -2197,6 +2199,16 @@ function flowHtml(o){
     return `<div class="step ${done?'done':''} ${cur?'cur':''}"><div class="dot">${done?'✓':(cur?'●':'')}</div><div class="lbl">${s.lbl}</div><div class="tm">${done?shortDT(s.t):(cur?'進行中':'')}</div></div>`;
   }).join("")}</div>`;
 }
+// 車型簡寫:Model Y→MY、Model S→MS、Model X→MX、Model 3→M3(其他原樣)
+function shortModel(m){
+  if(!m) return "";
+  const s=String(m).toUpperCase().replace(/\s+/g,"");
+  if(s.includes("MODELY")||s==="MY"||s==="Y") return "MY";
+  if(s.includes("MODELX")||s==="MX"||s==="X") return "MX";
+  if(s.includes("MODELS")||s==="MS"||s==="S") return "MS";
+  if(s.includes("MODEL3")||s==="M3"||s==="3") return "M3";
+  return m;
+}
 let woExpanded = new Set();
 function toggleCard(id, btn){
   const card = btn.closest(".wo"); if(!card) return;
@@ -2207,10 +2219,8 @@ function toggleCard(id, btn){
 function cardHtml(o){
     const st = STATUS[o.status] || STATUS[0];
     const exp = woExpanded.has(o.id);
-    // 精簡卡片重點(置頂):車型 / 車色 / 鑰匙 / 四輪定位 / 預計交車
+    // 精簡卡片重點(置頂):鑰匙 / 四輪定位 / 預計交車(車型車色已移到車牌旁)
     const keyChips = [
-      o.model?`<span class="chip">🚙 ${o.model} ${o.year||""} ${o.version||""}</span>`:"",
-      o.color?`<span class="chip">🎨 ${o.color}</span>`:"",
       o.keyKept?`<span class="chip">🔑 鑰匙:${o.keyKept}</span>`:"",
       o.alignment?`<span class="chip">🎯 四輪定位:${o.alignment}</span>`:"",
       o.eta?`<span class="chip eta">🚗 預計 ${fmtTimeShort(o.eta)}</span>`:"",
@@ -2230,7 +2240,7 @@ function cardHtml(o){
     <div class="wo ${exp?'expanded':''}" data-id="${o.id}">
       <div class="top">
         <div style="min-width:0">
-          <div class="plate">${o.plate||"(無車牌)"}${o.workNo?`<span class="wno">#${o.workNo}</span>`:""}</div>
+          <div class="plate">${o.plate||"(無車牌)"}${o.model?`<span class="model-tag">${shortModel(o.model)}</span>`:""}${o.color?`<span class="color-tag">${o.color}</span>`:""}${o.workNo?`<span class="wno">#${o.workNo}</span>`:""}</div>
           <div class="meta"><span class="st-pill" style="color:${statusColor(o.status)};border-color:${statusColor(o.status)}44;background:${statusColor(o.status)}12">● ${st.zh}</span></div>
           <div class="meta"><span style="white-space:nowrap">👤 <b style="color:#7c3aed">${o.receptionist||"—"}</b></span><span style="white-space:nowrap">🔧 <b style="color:${bodyTechText(o)?'var(--accent)':'var(--muted)'}">${bodyTechText(o)||"未指派"}</b></span></div>
         </div>
