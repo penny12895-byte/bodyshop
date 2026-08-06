@@ -304,9 +304,12 @@
   .chip.pay{background:#e0e7ff; color:#3730a3}
   .chip.eta{background:#ecfeff; color:#0e7490}
   /* 精簡卡片:詳情展開 */
-  .wo-bar{display:flex; align-items:center; gap:8px; margin-top:12px}
-  .wo-bar .status-sel{flex:1; min-width:0}
+  .wo-bar{display:flex; align-items:center; gap:8px; margin-top:12px; flex-wrap:wrap}
+  .wo-bar .status-sel{flex:1; min-width:120px}
   .expand-btn{flex:none; white-space:nowrap}
+  .qc-btn{flex:none; white-space:nowrap; background:#eff6ff; border-color:#bfdbfe; color:#1d4ed8; font-weight:700}
+  .qc-btn:hover{background:#dbeafe; border-color:var(--accent2)}
+  .qc-btn:active{background:#bfdbfe}
   .wo-more{display:none; margin-top:4px; padding-top:12px; border-top:1px dashed var(--line); animation:woFade .2s ease}
   .wo.expanded .wo-more{display:block}
   @keyframes woFade{from{opacity:0; transform:translateY(-4px)} to{opacity:1; transform:none}}
@@ -2228,7 +2231,7 @@ function cardHtml(o){
       <div class="top">
         <div style="min-width:0">
           <div class="plate">${o.plate||"(無車牌)"}${o.workNo?`<span class="wno">#${o.workNo}</span>`:""}</div>
-          <div class="meta"><span class="st-pill" style="color:${statusColor(o.status)};border-color:${statusColor(o.status)}44;background:${statusColor(o.status)}12">● ${st.zh}</span> <span class="dim">建立 ${fmtTimeShort(o.time)}</span></div>
+          <div class="meta"><span class="st-pill" style="color:${statusColor(o.status)};border-color:${statusColor(o.status)}44;background:${statusColor(o.status)}12">● ${st.zh}</span></div>
           <div class="meta">👤 <b style="color:#7c3aed">${o.receptionist||"—"}</b>　🔧 <b style="color:${bodyTechText(o)?'var(--accent)':'var(--muted)'}">${bodyTechText(o)||"未指派"}</b></div>
         </div>
         <button class="del" title="刪除" onclick="event.stopPropagation();delOrder(${o.id})">×</button>
@@ -2240,6 +2243,7 @@ function cardHtml(o){
         <select class="status-sel" onclick="event.stopPropagation()" onchange="setStatus(${o.id}, this.value)">
           ${STATUS.map((s,i)=>`<option value="${i}" ${i===o.status?"selected":""}>${s.en}(${s.zh})</option>`).join("")}
         </select>
+        <button class="mini qc-btn" onclick="event.stopPropagation();openQC(${o.id})">📋 完檢表</button>
         <button class="mini expand-btn" onclick="toggleCard(${o.id}, this)">${exp?'收合 ▲':'詳情 ▼'}</button>
       </div>
       <div class="wo-more">
@@ -2250,7 +2254,6 @@ function cardHtml(o){
         <div class="wo-actions">
           <button class="mini" onclick="editOrder(${o.id})">✏️ 修改 / 追加</button>
           <button class="mini" onclick="openDetail(${o.id})">📄 原始資料 / 掃碼</button>
-          <button class="mini" onclick="openQC(${o.id})">📋 完檢表</button>
           <button class="mini" onclick="openCase(${o.id})">🖨️ 案號紙</button>
         </div>
       </div>
