@@ -1,0 +1,2115 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+<title>車輛鈑噴服務 — 接待/派工系統</title>
+<meta name="theme-color" content="#e82127" />
+<meta name="mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+<meta name="apple-mobile-web-app-title" content="鈑噴派工" />
+<style>
+  :root{
+    --bg:#eef1f6; --panel:#ffffff; --panel2:#f2f4f7; --line:#e3e7ee;
+    --text:#1a1d24; --muted:#6b7280; --accent:#e82127; --accent2:#2563eb;
+    --ok:#16a34a; --warn:#d97706; --radius:14px;
+    --shadow-sm:0 1px 2px rgba(16,24,40,.06);
+    --shadow-md:0 6px 20px rgba(16,24,40,.08);
+    --shadow-lg:0 18px 50px rgba(16,24,40,.16);
+    --glow:0 0 0 1px rgba(232,33,39,.18), 0 0 18px rgba(232,33,39,.14);
+  }
+  *{box-sizing:border-box}
+  body{
+    margin:0; font-family:"Segoe UI","Microsoft JhengHei",system-ui,sans-serif;
+    background:
+      radial-gradient(1100px 520px at 100% -12%, rgba(232,33,39,.06), transparent 58%),
+      radial-gradient(900px 500px at -10% 0%, rgba(37,99,235,.05), transparent 55%),
+      var(--bg);
+    background-attachment:fixed;
+    color:var(--text); line-height:1.5; -webkit-font-smoothing:antialiased;
+  }
+  body::before{content:""; position:fixed; inset:0; z-index:0; pointer-events:none;
+    background-image:
+      linear-gradient(rgba(20,30,50,.035) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(20,30,50,.035) 1px, transparent 1px);
+    background-size:44px 44px; mask-image:radial-gradient(circle at 50% 0%, #000 0%, transparent 70%)}
+  header, .wrap{position:relative; z-index:1}
+  header{
+    padding:16px 28px; border-bottom:1px solid var(--line);
+    display:flex; align-items:center; gap:14px;
+    background:rgba(255,255,255,.82); backdrop-filter:saturate(1.4) blur(10px);
+    box-shadow:var(--shadow-sm);
+    position:sticky; top:0; z-index:5;
+  }
+  header::after{content:""; position:absolute; left:0; right:0; bottom:-1px; height:2px;
+    background:linear-gradient(90deg,var(--accent),rgba(232,33,39,0) 42%)}
+  header .logo{font-weight:700; letter-spacing:.42em; color:var(--accent); font-size:20px; padding-left:.42em;
+    font-family:"Segoe UI Semibold","Arial Narrow",system-ui,sans-serif;
+    text-shadow:0 0 12px rgba(232,33,39,.22)}
+  header h1{font-size:16px; margin:0; font-weight:600; color:var(--text)}
+  header .sub{font-size:12px; color:var(--muted)}
+  .wrap{max-width:1100px; margin:0 auto; padding:24px 20px 80px}
+  .grid{display:grid; grid-template-columns:1.3fr 1fr; gap:20px}
+  @media(max-width:880px){.grid{grid-template-columns:1fr}}
+  .card{background:var(--panel); border:1px solid var(--line); border-radius:var(--radius); padding:20px; margin-bottom:20px; box-shadow:var(--shadow-sm); transition:box-shadow .2s, transform .2s}
+  .card:hover{box-shadow:var(--shadow-md)}
+  .card h2{font-size:14px; margin:0 0 16px; color:var(--text); display:flex; align-items:center; gap:8px; padding-bottom:12px; border-bottom:1px solid var(--line)}
+  .card h2 .dot{width:9px;height:9px;border-radius:50%;background:var(--accent); box-shadow:0 0 0 4px rgba(232,33,39,.12)}
+  label{display:block; font-size:12px; color:var(--muted); margin:0 0 6px}
+  .row{display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-bottom:14px}
+  .row.three{grid-template-columns:1fr 1fr 1fr}
+  .field{margin-bottom:14px}
+  input,select,textarea{
+    width:100%; padding:11px 12px; background:var(--panel2); border:1px solid var(--line);
+    border-radius:10px; color:var(--text); font-size:14px; outline:none; transition:.15s;
+  }
+  textarea{resize:vertical; min-height:74px; font-family:inherit; line-height:1.5}
+  input:focus,select:focus,textarea:focus{border-color:var(--accent2); background:#fff; box-shadow:0 0 0 3px rgba(37,99,235,.12)}
+  input::placeholder{color:#9aa1ac}
+  .vin-row{display:flex; gap:10px}
+  .vin-row input{flex:1; text-transform:uppercase; letter-spacing:2px; font-family:"Consolas",monospace}
+  button{
+    cursor:pointer; border:none; border-radius:10px; font-size:14px; font-weight:600; padding:11px 18px; transition:.15s;
+  }
+  button:active{transform:translateY(1px)}
+  :focus-visible{outline:2px solid var(--accent2); outline-offset:2px}
+  .btn-primary{background:linear-gradient(180deg,#f4353b,var(--accent)); color:#fff; box-shadow:0 2px 8px rgba(232,33,39,.28)}
+  .btn-primary:hover{background:linear-gradient(180deg,#ff2d33,#e01e24); box-shadow:0 5px 14px rgba(232,33,39,.36)}
+  .btn-ghost{background:var(--panel2); color:var(--text); border:1px solid var(--line)}
+  .btn-ghost:hover{border-color:var(--accent2); background:#fff}
+  .decode-out{
+    margin-top:12px; background:var(--panel2); border:1px dashed var(--line); border-radius:10px; padding:14px; font-size:13px;
+    display:none;
+  }
+  .decode-out.show{display:block}
+  .decode-out .line{display:flex; justify-content:space-between; padding:5px 0; border-bottom:1px solid rgba(0,0,0,.06)}
+  .decode-out .line:last-child{border:0}
+  .decode-out .k{color:var(--muted)}
+  .decode-out .v{font-weight:600}
+  .badge{display:inline-block; font-size:11px; padding:2px 8px; border-radius:20px; background:rgba(37,99,235,.12); color:#2563eb; margin-left:6px}
+  .badge.warn{background:rgba(217,119,6,.14); color:#b45309}
+  .badge.err{background:rgba(232,33,39,.12); color:#b91c1c}
+  .actions{display:flex; gap:12px; justify-content:flex-end; margin-top:6px}
+
+  /* 打卡鐘 */
+  .punch-box{display:flex; gap:10px; align-items:center; flex-wrap:wrap}
+  .punch-time{font-size:13px; font-weight:600; color:var(--accent2)}
+  .punch-time.empty{color:var(--muted); font-weight:400}
+
+  /* 車身損傷圖 */
+  .diagram-wrap{display:block}
+  #carSvg{width:100%; max-width:500px; height:auto; display:block; margin:0 auto 8px; user-select:none;
+    background:linear-gradient(180deg,#fbfcfe,#f4f6f9); border:1px solid var(--line); border-radius:16px; padding:12px}
+  .car-body{fill:#eef1f6; stroke:#c3cad4; stroke-width:2}
+  .car-line{fill:none; stroke:#cdd4de; stroke-width:1.2}
+  .part{fill:#ffffff; stroke:#d5dbe4; stroke-width:1.2; cursor:pointer; transition:fill .12s, stroke .12s}
+  .part:hover{fill:#e9f1ff}
+  .part.sel{fill:#fde3e4; stroke:var(--accent); stroke-width:2.2}
+  .glass{fill:#e6eefb}
+  .glass:hover{fill:#d6e4fb}
+  .decor{pointer-events:none}
+  .pillar{fill:#dfe4ec; stroke:#c3cad4; stroke-width:1; cursor:pointer; transition:.12s}
+  .pillar:hover{fill:#cfd6e0}
+  .pillar.sel{fill:#fde3e4; stroke:var(--accent); stroke-width:2}
+  .wheel{fill:#33373f; stroke:#22252b; cursor:pointer; transition:.12s}
+  .wheel:hover{fill:#454a54}
+  .wheel.sel{fill:#b91c1c; stroke:var(--accent)}
+  .rim{fill:#c9d0da; stroke:#8b93a1; stroke-width:1.4; cursor:pointer; transition:.12s}
+  .rim:hover{fill:#e3e7ee}
+  .rim.sel{fill:#fde3e4; stroke:var(--accent); stroke-width:2}
+  .plabel{font-size:8px; fill:#5b6270; pointer-events:none; text-anchor:middle; dominant-baseline:middle; font-weight:600}
+  .wlabel{font-size:7px; fill:#eef1f5; pointer-events:none; text-anchor:middle; dominant-baseline:middle}
+  .part.sel ~ .plabel,.pillar.sel ~ .plabel{fill:var(--accent)}
+  .mini{font-size:12px; padding:6px 10px; border-radius:8px; background:#fff; border:1px solid var(--line); color:var(--text); font-weight:600; cursor:pointer}
+  .mini:hover{border-color:var(--accent2)}
+  /* 工單卡片打卡列 */
+  .punch-row{display:flex; flex-wrap:wrap; align-items:center; gap:6px; margin-top:8px}
+  .punch-label{font-size:12px; font-weight:700; color:var(--text); min-width:52px}
+  .punch-row.sub{margin-top:4px}
+  .punch-label.sub{min-width:40px; font-weight:600; color:var(--muted); padding-left:10px}
+  .mini-sel{font-size:12px; padding:5px 6px; border-radius:8px; border:1px solid var(--line); background:#fff}
+  /* 車身圖上的 BP/N 小標 */
+  .mode-badge{font-size:9px; font-weight:800; text-anchor:middle; dominant-baseline:middle; pointer-events:none;
+    paint-order:stroke; stroke:#fff; stroke-width:2.6px; stroke-linejoin:round}
+  .mode-badge.bp{fill:#1d4ed8}
+  .mode-badge.n{fill:#b91c1c}
+  /* 特殊部位(左右 / 前後)群組 */
+  .qp-group{display:flex; align-items:center; gap:6px; flex-wrap:wrap; margin-bottom:8px}
+  .qp-title{font-size:15px; font-weight:800; min-width:74px; color:var(--accent); letter-spacing:1px}
+  /* 分段勾選(留鑰匙 / 四輪定位) */
+  .seg-wrap{display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-top:18px}
+  @media(max-width:520px){.seg-wrap{grid-template-columns:1fr}}
+  .seg{display:flex; border:1px solid var(--line); border-radius:10px; overflow:hidden}
+  .seg-opt{flex:1; background:#fff; border:none; border-radius:0; padding:11px 8px; font-weight:600; color:var(--muted); cursor:pointer; font-size:14px}
+  .seg-opt + .seg-opt{border-left:1px solid var(--line)}
+  .seg-opt.on[data-tone="pos"]{background:#dcfce7; color:#15803d}
+  .seg-opt.on[data-tone="neg"]{background:#fee2e2; color:#b91c1c}
+  .seg-opt.on[data-tone="info"]{background:#dbeafe; color:#1d4ed8}
+  .seg-opt.on[data-tone="mute"]{background:#eef1f5; color:#48505c}
+
+  /* 完檢表 Modal + 列印 */
+  .modal{position:fixed; inset:0; background:rgba(15,18,25,.5); display:none; z-index:50; overflow:auto; padding:24px}
+  .modal.show{display:block}
+  .qc-card{background:#fff; max-width:900px; margin:0 auto; border-radius:12px; padding:22px 26px; box-shadow:0 20px 60px rgba(0,0,0,.3)}
+  .qc-actions{display:flex; gap:10px; justify-content:flex-end; margin-bottom:16px; position:sticky; top:-24px; background:#fff; padding:10px 0; z-index:2}
+  .qc-title{text-align:center; margin:0 0 4px; font-size:18px; font-weight:800; letter-spacing:2px}
+  .qc-sub{text-align:center; color:#666; font-size:12px; margin-bottom:14px}
+  .qc-head{display:grid; grid-template-columns:1fr 1fr 1fr; gap:4px 16px; font-size:12px; border:1px solid #333; padding:10px 12px; border-radius:6px; margin-bottom:8px}
+  .qc-head .f{display:flex; gap:4px; align-items:center; padding:2px 0}
+  .qc-head .f b{color:#333; white-space:nowrap}
+  .qc-head .f .val{border-bottom:1px solid #bbb; flex:1; min-height:16px; padding:0 4px; font-weight:600}
+  .qc-head input{border:none; border-bottom:1px solid #bbb; border-radius:0; padding:2px 4px; font-size:12px; background:transparent}
+  .qc-pos{grid-column:1 / -1; display:flex; flex-wrap:wrap; gap:10px; margin-top:6px}
+  .qc-pos .p{display:flex; gap:4px; align-items:center}
+  .qc-pos .pos-tag{border:1px solid #333; border-radius:4px; padding:2px 8px; font-weight:600; background:#f3f4f6}
+  .wo-stats{display:flex; gap:10px; margin-bottom:14px}
+  .wo-stats .st{flex:1; position:relative; background:#fff; border:1px solid var(--line); border-radius:12px; padding:12px 6px 10px; text-align:center; overflow:hidden; box-shadow:var(--shadow-sm); transition:.15s}
+  .wo-stats .st:hover{transform:translateY(-2px); box-shadow:var(--shadow-md)}
+  .wo-stats .st::before{content:""; position:absolute; left:0; top:0; width:100%; height:3px; background:var(--accent)}
+  .wo-stats .st.info::before{background:var(--accent2)}
+  .wo-stats .st.ok::before{background:var(--ok)}
+  .wo-stats .st .ic{font-size:14px; display:block; line-height:1; margin-bottom:3px; opacity:.9}
+  .wo-stats .st b{display:block; font-size:24px; font-weight:800; color:var(--accent); line-height:1.1}
+  .wo-stats .st.info b{color:var(--accent2)}
+  .wo-stats .st.ok b{color:var(--ok)}
+  .wo-stats .st .lb{font-size:11px; color:var(--muted); font-weight:600}
+  .flow{display:flex; align-items:flex-start; margin:12px 0 6px}
+  .flow .step{flex:1; text-align:center; position:relative; font-size:11px}
+  .flow .step:not(:last-child)::after{content:""; position:absolute; top:9px; left:50%; width:100%; height:2px; background:var(--line); z-index:0}
+  .flow .step.done:not(:last-child)::after{background:#16a34a}
+  .flow .dot{width:20px; height:20px; border-radius:50%; background:#fff; border:2px solid var(--line); margin:0 auto 4px; position:relative; z-index:1; display:flex; align-items:center; justify-content:center; font-size:11px; color:#fff; line-height:1}
+  .flow .step.done .dot{background:#16a34a; border-color:#16a34a}
+  .flow .step.cur .dot{border-color:var(--accent); box-shadow:0 0 0 3px rgba(232,33,39,.15)}
+  .flow .lbl{font-weight:700; color:var(--text)}
+  .flow .tm{color:var(--muted); font-size:10px; margin-top:1px; min-height:12px}
+  .flow .step.cur .tm{color:var(--accent); font-weight:600}
+  .wo-toolbar{padding:8px 10px; background:var(--panel2); border:1px solid var(--line); border-radius:12px}
+  .wo-toolbar select{font-size:13px; padding:7px 9px; border:1px solid var(--line); border-radius:9px; background:#fff}
+  .vbtn{font-size:13px; padding:7px 12px; border:1px solid var(--line); border-radius:9px; background:#fff; cursor:pointer; font-weight:600; color:var(--text); transition:.15s}
+  .vbtn:hover{border-color:var(--accent2)}
+  .vbtn.on{background:var(--accent); color:#fff; border-color:var(--accent)}
+  /* 檢視切換:分段控制 */
+  #viewSeg{display:inline-flex; gap:2px; background:#fff; border:1px solid var(--line); border-radius:10px; padding:3px}
+  #viewSeg .vbtn{border:none; background:transparent; border-radius:8px; padding:7px 14px; color:var(--muted)}
+  #viewSeg .vbtn:hover{color:var(--text); background:rgba(0,0,0,.03)}
+  #viewSeg .vbtn.on{background:linear-gradient(180deg,#f4353b,var(--accent)); color:#fff; box-shadow:0 2px 6px rgba(232,33,39,.28)}
+  #exportBtn{margin-left:auto; color:var(--ok); border-color:#bbf7d0; background:#f0fdf4}
+  #exportBtn:hover{background:#dcfce7; border-color:var(--ok)}
+  .cal-grid{display:grid; grid-template-columns:repeat(7,1fr); gap:4px}
+  .cal-dow{text-align:center; font-size:11px; color:var(--muted); font-weight:700; padding:2px 0}
+  .cal-cell{min-height:64px; border:1px solid var(--line); border-radius:8px; padding:4px 6px; background:#fff; overflow:hidden; cursor:pointer; display:flex; flex-direction:column; transition:.12s}
+  .cal-cell.empty{background:transparent; border:none; cursor:default}
+  .cal-cell.has:hover{border-color:var(--accent2); background:#fafbff}
+  .cal-cell.today{border-color:var(--accent); box-shadow:inset 0 0 0 1px var(--accent)}
+  .cal-cell.sel{background:#eef2ff; border-color:#6366f1}
+  .cal-d{font-size:12px; font-weight:700; color:var(--muted)}
+  .cal-count{flex:1; display:flex; align-items:center; justify-content:center; gap:2px; font-size:22px; font-weight:800; color:var(--accent)}
+  .cal-count span{font-size:11px; font-weight:600; color:var(--muted); align-self:flex-end; margin-bottom:4px}
+  .tbl-wrap{overflow-x:auto; border:1px solid var(--line); border-radius:10px}
+  .tbl{border-collapse:collapse; width:100%; font-size:12px; white-space:nowrap}
+  .tbl th,.tbl td{border:1px solid var(--line); padding:6px 9px; text-align:left}
+  .tbl th{background:#f1f5f9; position:sticky; top:0; z-index:1; font-weight:700; color:#334155}
+  .tbl tbody tr:nth-child(even){background:#fafbfc}
+  .tbl tbody tr:hover{background:#eff6ff}
+  .cal-day-detail{margin-top:14px}
+  .cal-day-detail h3{font-size:14px; margin:0 0 8px}
+  .case-card{background:#fff; max-width:920px; margin:24px auto; padding:0; border-radius:10px; box-shadow:0 10px 40px rgba(0,0,0,.25); color:#000; overflow:hidden}
+  .case-actions{display:flex; justify-content:flex-end; gap:8px; padding:14px}
+  .case-sheet{border:3px solid #000; border-bottom:none}
+  .case-row{display:grid; grid-template-columns:260px 1fr; border-bottom:3px solid #000}
+  .case-row b{font-size:30px; font-weight:800; padding:24px 22px; border-right:3px solid #000; display:flex; align-items:center; background:#f3f4f6; white-space:nowrap}
+  .case-row .case-val{font-size:40px; font-weight:800; letter-spacing:2px; padding:24px 26px; display:flex; align-items:center; min-height:44px}
+  .sa-toggle{display:inline-flex; gap:6px}
+  .sa-opt{border:1px solid #bbb; background:#fff; border-radius:6px; padding:3px 14px; font-size:12px; cursor:pointer; font-weight:700}
+  .sa-opt.on{background:#16a34a; color:#fff; border-color:#16a34a}
+  .sa-opt.on.no{background:#e82127; border-color:#e82127}
+  .qc-cols{display:grid; grid-template-columns:1fr 1fr; gap:12px; align-items:start; margin-bottom:8px}
+  .qc-col{display:flex; flex-direction:column; gap:8px; min-width:0}
+  .qc-col .qc-sec{margin-bottom:0}
+  .qc-sec{border:1px solid #333; border-radius:6px; margin-bottom:8px; overflow:hidden; break-inside:avoid}
+  .qc-sec h4{margin:0; background:#f0f2f5; padding:6px 12px; font-size:13px; border-bottom:1px solid #333}
+  .qc-item{display:flex; align-items:center; gap:10px; padding:5px 12px; font-size:12px; border-bottom:1px solid #e5e7eb}
+  .qc-item:last-child{border-bottom:0}
+  .qc-item .t{flex:1}
+  .qc-item .boxes{display:flex; gap:12px; align-items:center; flex:none}
+  .qcbox{width:18px; height:18px; border:1.5px solid #555; border-radius:4px; display:inline-flex; align-items:center; justify-content:center; cursor:pointer; font-size:13px; font-weight:800; color:#fff; background:#fff; line-height:1}
+  .qcbox.on{background:var(--ok); border-color:var(--ok)}
+  .qcbox.on::after{content:"✓"}
+  .qcbox.no.on{background:#e82127; border-color:#e82127}
+  .qcbox.no.on::after{content:"✗"}
+  .yn{display:flex; gap:6px; align-items:center; font-size:11px; color:#555}
+  .qc-sign{display:flex; flex-wrap:wrap; gap:16px; padding:6px 12px; font-size:11px; background:#fafbfc; border-top:1px dashed #ccc}
+  .qc-sign .s{display:flex; gap:4px}
+  .qc-sign .s b{color:#333}
+  .qc-sign select{font-size:11px; padding:3px 6px; width:auto; display:inline-block}
+  .pbtn{font-size:11px; padding:3px 9px; border-radius:6px; background:var(--accent2); color:#fff; border:none; font-weight:600; cursor:pointer}
+  .pbtn:hover{background:#1d4ed8}
+  .pbtn.done{background:var(--ok)}
+  .print-only{display:none}
+  .qc-tire{border:1px solid #333; border-radius:6px; padding:8px 12px; font-size:12px; margin-bottom:8px}
+  .qc-tire table{width:100%; border-collapse:collapse}
+  .qc-tire td{border:1px solid #ccc; padding:4px 6px; text-align:center}
+  .qc-tire input{width:70px; border:none; border-bottom:1px solid #bbb; border-radius:0; text-align:center; font-size:12px}
+  .qc-foot{display:grid; grid-template-columns:1fr 1fr; gap:6px 16px; font-size:12px; border:1px solid #333; border-radius:6px; padding:10px 12px}
+  .qc-foot .f{display:flex; gap:4px; align-items:center}
+  .qc-foot .f b{white-space:nowrap; color:#333}
+  .qc-foot .val{border-bottom:1px solid #bbb; flex:1; min-height:16px; padding:0 4px; font-weight:600}
+  .qc-foot input{border:none; border-bottom:1px solid #bbb; border-radius:0; padding:2px 4px; font-size:12px; background:transparent; flex:1}
+  @media print{
+    body>*:not(.modal){display:none !important}
+    .modal{display:none !important}
+    .modal.show{position:static !important; display:block !important; background:#fff; padding:0; overflow:visible}
+    .qc-card,.case-card{box-shadow:none; max-width:none; width:100%; margin:0; padding:0}
+    .qc-actions,.case-actions{display:none !important}
+    .qc-sec,.qc-head,.qc-tire,.qc-foot{break-inside:avoid}
+    .qcbox,.qcbox.on{-webkit-print-color-adjust:exact; print-color-adjust:exact}
+    .no-print{display:none !important}
+    .print-only{display:inline !important}
+    @page{size:A4; margin:10mm}
+  }
+  .quick-parts{display:flex; flex-wrap:wrap; gap:8px}
+  .qp{font-size:13px; padding:7px 12px; border-radius:20px; background:#fff; border:1px solid var(--line); color:var(--text); cursor:pointer; font-weight:600}
+  .qp:hover{border-color:var(--accent2)}
+  .qp.on{background:#fde3e4; border-color:var(--accent); color:var(--accent)}
+  .dmg-list{min-height:40px}
+  .dmg-empty{font-size:12px;color:var(--muted);padding:8px 0}
+  .dmg-row{display:flex; align-items:center; gap:8px; padding:7px 0; border-bottom:1px solid var(--line)}
+  .dmg-row:last-child{border:0}
+  .dmg-name{flex:1; font-size:13px; font-weight:600}
+  .dmg-row select{width:130px; flex:none; padding:7px 8px; font-size:12px}
+  .dmg-row .del{font-size:16px}
+
+  /* work order list */
+  .wo{background:#fff; border:1px solid var(--line); border-left:3px solid var(--accent); border-radius:12px; padding:14px 16px; margin-bottom:12px; box-shadow:var(--shadow-sm); transition:.15s}
+  .wo:hover{box-shadow:var(--shadow-md), var(--glow); transform:translateY(-1px); border-left-color:#ff2d33}
+  .wo .top{display:flex; justify-content:space-between; align-items:flex-start; gap:10px}
+  .wo .plate{font-weight:800; font-size:17px; letter-spacing:1px}
+  .wo .meta{font-size:12px; color:var(--muted); margin-top:4px}
+  .wo .chips{margin-top:10px; display:flex; flex-wrap:wrap; gap:6px}
+  .chip{font-size:11px; padding:3px 10px; border-radius:20px; background:#eef1f5; color:#48505c; font-weight:600}
+  .chip.dmg{background:#fde3e4; color:#b91c1c}
+  .status-sel{font-size:12px; padding:5px 8px; border-radius:8px; background:#fff; border:1px solid var(--line); color:var(--text); max-width:220px}
+  .empty{color:var(--muted); font-size:13px; text-align:center; padding:30px 0}
+  .del{background:none;border:none;color:#9aa0ab;font-size:18px;cursor:pointer;padding:0 4px}
+  .del:hover{color:var(--accent)}
+  .hint{font-size:11px;color:#9aa1ac;margin-top:4px}
+  .toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:var(--ok);color:#fff;
+    padding:12px 22px;border-radius:10px;font-weight:600;font-size:14px;opacity:0;transition:.3s;pointer-events:none;z-index:20}
+  .toast.show{opacity:1}
+
+  /* 保險理賠資料勾選表 */
+  .claim-grid{display:grid; grid-template-columns:repeat(3,1fr); gap:8px}
+  @media(max-width:560px){.claim-grid{grid-template-columns:1fr 1fr}}
+  .claim-item{display:flex; align-items:center; gap:8px; padding:9px 10px; border:1px solid var(--line);
+    border-radius:8px; cursor:pointer; background:#fff; font-size:13px; user-select:none; transition:.12s}
+  .claim-item:hover{border-color:var(--accent2)}
+  .cbox{width:19px; height:19px; border:1.6px solid #999; border-radius:5px; display:inline-flex; align-items:center;
+    justify-content:center; font-weight:800; color:#fff; flex:none; font-size:13px; line-height:1}
+  .cbox.v{background:var(--ok); border-color:var(--ok)}
+  .cbox.v::after{content:"✓"}
+  .cbox.x{background:var(--accent); border-color:var(--accent)}
+  .cbox.x::after{content:"✗"}
+  /* 客戶簽名板 */
+  .sig-wrap{border:1px dashed #c3cad4; border-radius:12px; background:#fff; padding:6px}
+  #sigPad{width:100%; height:170px; display:block; border-radius:8px; background:#fdfefe; touch-action:none; cursor:crosshair}
+
+  /* 交車確認彈窗 */
+  .deliver-card{background:#fff; max-width:420px; margin:14vh auto; border-radius:16px; padding:22px 24px; box-shadow:var(--shadow-lg)}
+  .deliver-card h3{margin:0 0 4px; font-size:17px; font-weight:800}
+  .deliver-card .sub{margin:0 0 14px; font-size:12px; color:var(--muted); line-height:1.5}
+  .deliver-card label{margin-top:12px}
+  .deliver-card .actions{display:flex; gap:12px; justify-content:flex-end}
+
+  /* ===== 平板 / 手機 響應式 ===== */
+  @media(max-width:820px){
+    .wrap{padding:16px 12px 60px}
+    header{padding:12px 16px}
+    header .logo{font-size:18px; letter-spacing:.3em}
+    header h1{font-size:14px}
+    header .sub{display:none}
+  }
+  @media(max-width:600px){
+    .row, .row.three{grid-template-columns:1fr}
+    .card{padding:16px}
+    .qc-cols{grid-template-columns:1fr}
+    .modal{padding:10px}
+    .qc-card{padding:16px 14px}
+    .detail-card, .deliver-card{margin:10px auto}
+    .deliver-card{margin:8vh auto}
+    .cal-cell{min-height:50px; padding:3px 4px}
+    .cal-count{font-size:18px}
+    .cal-dow{font-size:10px}
+    .wo-stats .st b{font-size:20px}
+    .actions{flex-wrap:wrap}
+    /* 避免 iOS 聚焦時自動放大 */
+    input, select, textarea{font-size:16px}
+    .case-row{grid-template-columns:110px 1fr}
+    .case-row b{font-size:16px; padding:12px}
+    .case-row .case-val{font-size:20px; padding:12px}
+  }
+
+  /* 原始資料 / 掃碼 Modal */
+  .detail-card{background:#fff; border:1px solid var(--line); max-width:760px; margin:24px auto; border-radius:16px; padding:0; box-shadow:var(--shadow-lg); overflow:hidden}
+  .detail-head{display:flex; align-items:center; justify-content:space-between; gap:12px; padding:16px 22px;
+    background:linear-gradient(180deg,#fff,#f7f9fc); border-bottom:1px solid var(--line); position:sticky; top:0; z-index:2}
+  .detail-head .htxt .plate{font-size:20px; font-weight:800; letter-spacing:1px}
+  .detail-head .htxt .sub{font-size:12px; color:var(--muted); margin-top:2px}
+  .detail-body{padding:18px 22px 24px}
+  .detail-qr{display:flex; gap:16px; align-items:center; background:var(--panel2); border:1px solid var(--line);
+    border-radius:12px; padding:14px 16px; margin-bottom:18px}
+  .detail-qr .qrbox{background:#fff; padding:8px; border-radius:10px; border:1px solid var(--line); line-height:0; flex:none}
+  .detail-qr .qrbox img,.detail-qr .qrbox canvas{display:block}
+  .detail-qr .cap{font-size:12px; color:var(--muted); margin-bottom:4px}
+  .detail-qr .vin{font-family:Consolas,monospace; letter-spacing:2px; font-weight:800; font-size:16px; word-break:break-all; color:var(--text)}
+  .detail-qr .hint2{font-size:11px; color:var(--muted); margin-top:6px}
+  .detail-sec{margin-bottom:16px}
+  .detail-sec > h4{margin:0 0 6px; font-size:13px; color:var(--accent); font-weight:800; display:flex; align-items:center; gap:6px}
+  .detail-grid{display:grid; grid-template-columns:1fr 1fr; gap:0 22px}
+  @media(max-width:560px){.detail-grid{grid-template-columns:1fr}}
+  .dl{display:flex; gap:8px; font-size:13px; padding:6px 0; border-bottom:1px dashed var(--line)}
+  .dl .k{color:var(--muted); min-width:78px; flex:none}
+  .dl .v{font-weight:600; color:var(--text); word-break:break-all}
+  .dl .v.dim{color:var(--muted); font-weight:400}
+  .detail-dmg{display:flex; flex-wrap:wrap; gap:6px}
+</style>
+</head>
+<body>
+<header>
+  <span class="logo">TESLA</span>
+  <div>
+    <h1>車輛鈑噴服務 — 接待 / 派工系統</h1>
+    <div class="sub">入場登記 · 車身碼辨識 · 損傷登記 · 接車打卡 · 維修進度追蹤</div>
+  </div>
+</header>
+
+<div class="wrap">
+  <div class="grid">
+    <!-- ===== 左:登記表單 ===== -->
+    <div>
+      <div class="card">
+        <h2><span class="dot"></span>顧客資訊</h2>
+        <div class="row">
+          <div>
+            <label>顧客姓名 / 稱謂</label>
+            <div style="display:flex; gap:8px">
+              <input id="custName" placeholder="王" style="flex:1" />
+              <select id="title" style="width:96px; flex:none">
+                <option>先生</option>
+                <option>小姐</option>
+              </select>
+            </div>
+          </div>
+          <div>
+            <label>聯絡電話</label>
+            <input id="custPhone" placeholder="0912-345-678" />
+          </div>
+        </div>
+        <div class="field">
+          <label>車牌號碼</label>
+          <input id="plate" placeholder="ABC-1234" style="text-transform:uppercase" />
+        </div>
+      </div>
+
+      <div class="card">
+        <h2><span class="dot"></span>車輛資訊(車身碼辨識)</h2>
+        <div class="field">
+          <label>工單號(可直接貼上)</label>
+          <input id="workNo" placeholder="貼上工單號…" />
+        </div>
+        <label>車身碼 VIN(17 碼)</label>
+        <div class="vin-row">
+          <input id="vin" maxlength="17" placeholder="5YJ3E1EA7KF000000" />
+          <button class="btn-ghost" onclick="doDecode()">辨識</button>
+        </div>
+        <div class="hint">按「辨識」離線判讀車型、年份與動力版本(第 8 碼)。動力版本為推測值,可手動修正。</div>
+
+        <div id="decodeOut" class="decode-out"></div>
+
+        <div class="row three" style="margin-top:16px">
+          <div>
+            <label>車型</label>
+            <input id="model" placeholder="辨識後自動帶入" />
+          </div>
+          <div>
+            <label>年份</label>
+            <input id="year" placeholder="—" />
+          </div>
+          <div>
+            <label>動力版本</label>
+            <input id="version" placeholder="辨識後自動帶入" />
+          </div>
+        </div>
+        <div class="field">
+          <label>車色</label>
+          <select id="color"></select>
+        </div>
+        <div id="vinQrWrap" style="display:none; text-align:center; margin-top:10px">
+          <div style="font-weight:700; font-size:13px; letter-spacing:1px; margin-bottom:8px">Scan for details</div>
+          <div id="vinQr" style="display:inline-block; padding:10px; background:#fff; border:1px solid var(--line); border-radius:14px"></div>
+          <div class="hint" style="text-align:center">依車身碼(VIN)自動產生</div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2><span class="dot"></span>付款類型</h2>
+        <div class="field">
+          <label>快速輸入(貼上理賠字串,自動帶入)</label>
+          <div style="display:flex; gap:8px">
+            <input id="payParse" placeholder="例:富邦本52626D103173林宜賢04-23850866#228前保BP.左前葉BP" style="flex:1"
+                   onkeydown="if(event.key==='Enter'){parseAndFillPayment();event.preventDefault();}" />
+            <button type="button" class="btn-ghost" style="flex:none" onclick="parseAndFillPayment()">解析</button>
+          </div>
+          <div class="hint">自動辨識:保險公司 + 本/財車、案號、經辦、電話,並連動受損部位。</div>
+        </div>
+        <div class="row">
+          <div>
+            <label>付款類型</label>
+            <select id="paymentType" onchange="onPaymentChange()">
+              <option value="">請選擇</option>
+              <option>自費</option>
+              <option>保固</option>
+              <option>DD</option>
+              <option>保險本車</option>
+              <option>保險財車</option>
+            </select>
+          </div>
+          <div id="insurerWrap" style="display:none">
+            <label>保險公司</label>
+            <select id="insurer"></select>
+          </div>
+        </div>
+        <div class="row three">
+          <div>
+            <label>案號</label>
+            <input id="caseNo" placeholder="理賠案號" />
+          </div>
+          <div>
+            <label>經辦</label>
+            <input id="agent" placeholder="經辦姓名" />
+          </div>
+          <div>
+            <label>經辦電話</label>
+            <input id="agentPhone" placeholder="含分機" />
+          </div>
+        </div>
+        <div class="hint">選「保險本車 / 保險財車」時,選擇保險公司後會自動組成例如「國泰本車」「富邦財車」。案號紙的「出險日期」會自動帶入派工至鈑金的派工日期。</div>
+      </div>
+
+      <div class="card">
+        <h2><span class="dot"></span>保險理賠資料 <span style="font-weight:400;font-size:12px;color:var(--muted)">(V 已繳、X 需補繳,點格子切換)</span></h2>
+        <div id="claimGrid" class="claim-grid"></div>
+      </div>
+
+      <div class="card">
+        <h2><span class="dot"></span>時間紀錄</h2>
+        <div class="row three">
+          <div>
+            <label>進場時間</label>
+            <input type="datetime-local" id="entryTime" />
+          </div>
+          <div>
+            <label>完工時間</label>
+            <input type="datetime-local" id="finishTime" />
+          </div>
+          <div>
+            <label>出場時間</label>
+            <input type="datetime-local" id="exitTime" />
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2><span class="dot"></span>損傷部位登記</h2>
+        <div class="hint" style="margin-bottom:12px">點一下標記 <b>BP=鈑修</b>,再點一下切換 <b>N=換新</b>,第三下取消(車頭朝上)。</div>
+        <div class="diagram-wrap">
+          <svg id="carSvg" viewBox="0 0 320 470" xmlns="http://www.w3.org/2000/svg">
+            <defs>
+              <filter id="soft" x="-20%" y="-20%" width="140%" height="140%">
+                <feDropShadow dx="0" dy="3" stdDeviation="4" flood-color="#000" flood-opacity="0.10"/>
+              </filter>
+            </defs>
+            <!-- Model Y 車體外形(圓潤) -->
+            <path class="car-body" filter="url(#soft)" d="M160,22 C124,22 102,32 96,56 C90,78 86,104 86,140 L86,338 C86,382 96,410 120,426 C135,436 150,440 160,440 C170,440 185,436 200,426 C224,410 234,382 234,338 L234,140 C234,104 230,78 224,56 C218,32 196,22 160,22 Z"/>
+
+            <!-- 車輪(圓形輪胎 + 圓形鋁圈) -->
+            <circle class="wheel" data-part="左前輪胎" cx="78" cy="98" r="18"/><text class="wlabel" x="78" y="88" style="font-size:7px">輪胎</text>
+            <circle class="rim"   data-part="左前鋁圈" cx="78" cy="100" r="10"/><text class="wlabel" x="78" y="101" style="fill:#4a505c;font-size:6.5px">鋁圈</text>
+            <circle class="wheel" data-part="右前輪胎" cx="242" cy="98" r="18"/><text class="wlabel" x="242" y="88" style="font-size:7px">輪胎</text>
+            <circle class="rim"   data-part="右前鋁圈" cx="242" cy="100" r="10"/><text class="wlabel" x="242" y="101" style="fill:#4a505c;font-size:6.5px">鋁圈</text>
+            <circle class="wheel" data-part="左後輪胎" cx="78" cy="360" r="18"/><text class="wlabel" x="78" y="350" style="font-size:7px">輪胎</text>
+            <circle class="rim"   data-part="左後鋁圈" cx="78" cy="362" r="10"/><text class="wlabel" x="78" y="363" style="fill:#4a505c;font-size:6.5px">鋁圈</text>
+            <circle class="wheel" data-part="右後輪胎" cx="242" cy="360" r="18"/><text class="wlabel" x="242" y="350" style="font-size:7px">輪胎</text>
+            <circle class="rim"   data-part="右後鋁圈" cx="242" cy="362" r="10"/><text class="wlabel" x="242" y="363" style="fill:#4a505c;font-size:6.5px">鋁圈</text>
+
+            <!-- 後視鏡 -->
+            <rect class="part" data-part="左後視鏡" x="54" y="152" width="30" height="18" rx="9"/><text class="plabel" x="69" y="161" style="font-size:7.5px">後視鏡</text>
+            <rect class="part" data-part="右後視鏡" x="236" y="152" width="30" height="18" rx="9"/><text class="plabel" x="251" y="161" style="font-size:7.5px">後視鏡</text>
+
+            <!-- 中央:前→後(Model Y 比例:短前蓋、大艙、掀背尾門) -->
+            <rect class="part" data-part="前保" x="116" y="30" width="88" height="20" rx="10"/><text class="plabel" x="160" y="40">前保</text>
+            <rect class="part" data-part="前蓋" x="110" y="54" width="100" height="46" rx="14"/><text class="plabel" x="160" y="78">前蓋</text>
+            <rect class="part glass" data-part="前擋風玻璃" x="116" y="104" width="88" height="34" rx="10"/><text class="plabel" x="160" y="122">前檔</text>
+            <rect class="part glass" data-part="天窗(玻璃車頂)" x="128" y="156" width="64" height="86" rx="14"/><text class="plabel" x="160" y="200">天窗</text>
+            <rect class="part glass" data-part="後擋風玻璃" x="116" y="298" width="88" height="34" rx="10"/><text class="plabel" x="160" y="316">後檔</text>
+            <rect class="part" data-part="尾翼" x="118" y="336" width="84" height="20" rx="7"/><text class="plabel" x="160" y="347" style="font-size:8px">尾翼</text>
+            <rect class="part" data-part="後蓋" x="110" y="360" width="100" height="50" rx="14"/><text class="plabel" x="160" y="387">後蓋</text>
+            <rect class="part" data-part="後保" x="116" y="414" width="88" height="20" rx="10"/><text class="plabel" x="160" y="424">後保</text>
+
+            <!-- 左側 -->
+            <rect class="part"   data-part="左前葉子板" x="90" y="54" width="22" height="46" rx="7"/><text class="plabel" x="101" y="77" style="font-size:7px">前葉</text>
+            <rect class="pillar" data-part="左A柱" x="88" y="104" width="24" height="30" rx="5"/><text class="plabel" x="100" y="119" style="font-size:7px">A柱</text>
+            <rect class="part"   data-part="左前車門" x="90" y="138" width="22" height="70" rx="7"/><text class="plabel" x="101" y="173" style="font-size:7px">前門</text>
+            <rect class="pillar" data-part="左B柱" x="88" y="210" width="24" height="24" rx="5"/><text class="plabel" x="100" y="222" style="font-size:7px">B柱</text>
+            <rect class="part"   data-part="左後車門" x="90" y="238" width="22" height="62" rx="7"/><text class="plabel" x="101" y="269" style="font-size:7px">後門</text>
+            <rect class="pillar" data-part="左C柱" x="88" y="302" width="24" height="24" rx="5"/><text class="plabel" x="100" y="314" style="font-size:7px">C柱</text>
+            <rect class="part"   data-part="左後葉子板" x="90" y="330" width="22" height="80" rx="7"/><text class="plabel" x="101" y="370" style="font-size:7px">後葉</text>
+
+            <!-- 右側 -->
+            <rect class="part"   data-part="右前葉子板" x="208" y="54" width="22" height="46" rx="7"/><text class="plabel" x="219" y="77" style="font-size:7px">前葉</text>
+            <rect class="pillar" data-part="右A柱" x="208" y="104" width="24" height="30" rx="5"/><text class="plabel" x="220" y="119" style="font-size:7px">A柱</text>
+            <rect class="part"   data-part="右前車門" x="208" y="138" width="22" height="70" rx="7"/><text class="plabel" x="219" y="173" style="font-size:7px">前門</text>
+            <rect class="pillar" data-part="右B柱" x="208" y="210" width="24" height="24" rx="5"/><text class="plabel" x="220" y="222" style="font-size:7px">B柱</text>
+            <rect class="part"   data-part="右後車門" x="208" y="238" width="22" height="62" rx="7"/><text class="plabel" x="219" y="269" style="font-size:7px">後門</text>
+            <rect class="pillar" data-part="右C柱" x="208" y="302" width="24" height="24" rx="5"/><text class="plabel" x="220" y="314" style="font-size:7px">C柱</text>
+            <rect class="part"   data-part="右後葉子板" x="208" y="330" width="22" height="80" rx="7"/><text class="plabel" x="219" y="370" style="font-size:7px">後葉</text>
+
+          </svg>
+
+          <div class="seg-wrap">
+            <div>
+              <label>是否留鑰匙?</label>
+              <div class="seg" id="segKey">
+                <button type="button" class="seg-opt" data-tone="pos" data-val="有"   onclick="setSeg('key','有')">有 ✓</button>
+                <button type="button" class="seg-opt" data-tone="neg" data-val="沒有" onclick="setSeg('key','沒有')">沒有 ✗</button>
+              </div>
+            </div>
+            <div>
+              <label>是否需要四輪定位?</label>
+              <div class="seg" id="segAlign">
+                <button type="button" class="seg-opt" data-tone="pos" data-val="需要"   onclick="setSeg('align','需要')">需要 ✓</button>
+                <button type="button" class="seg-opt" data-tone="neg" data-val="不需要" onclick="setSeg('align','不需要')">不需要 ✗</button>
+              </div>
+            </div>
+          </div>
+
+          <div style="margin-top:16px">
+            <label>其他 / 特殊部位(點選常用或手動輸入)</label>
+            <div id="quickParts" class="quick-parts"></div>
+            <div style="display:flex; gap:8px; margin-top:8px">
+              <input id="customPart" placeholder="自行輸入特殊部位…(例:底盤大樑、前下巴)" style="flex:1"
+                     onkeydown="if(event.key==='Enter'){addCustomPart();event.preventDefault();}" />
+              <button type="button" class="btn-ghost" style="flex:none" onclick="addCustomPart()">＋ 新增</button>
+            </div>
+          </div>
+
+          <div style="margin-top:16px">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px">
+              <label style="margin:0">已選損傷部位</label>
+              <button type="button" class="mini" onclick="clearDmg()">🗑 一鍵清空已選部位</button>
+            </div>
+            <div id="dmgList" class="dmg-list"><div class="dmg-empty">尚未選擇部位。</div></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2><span class="dot"></span>備註</h2>
+        <textarea id="note" rows="3" placeholder="客人特殊需求…(例:急件、原廠件、漆面小刮不處理)"></textarea>
+      </div>
+
+      <div class="card">
+        <h2><span class="dot"></span>服務指派 / 接車打卡</h2>
+        <div class="field">
+          <label>接待專員</label>
+          <select id="receptionist" onchange="onReceptionistChange()"></select>
+        </div>
+        <div class="hint" style="margin:-6px 0 10px">鈑金 / 噴漆技師一律進入「完檢表」內各工序自行選擇並打卡。</div>
+        <div class="row">
+          <div>
+            <label>預計交車時間</label>
+            <input id="eta" type="datetime-local" />
+          </div>
+          <div>
+            <label>維修進度</label>
+            <select id="statusSel" onchange="onDispatchChange()"></select>
+          </div>
+        </div>
+        <div class="field" id="dispatchBox" style="display:none">
+          <label>派工時間(派工至「鈑金」時自動產生)</label>
+          <div class="punch-box">
+            <span id="dispatchTime" class="punch-time">—</span>
+          </div>
+        </div>
+        <div class="field">
+          <label>接車打卡(選好接待專員後按打卡)</label>
+          <div class="punch-box">
+            <button class="btn-ghost" onclick="punchIn()">🕒 打卡接車</button>
+            <span id="punchTime" class="punch-time empty">尚未打卡</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2><span class="dot"></span>客戶簽名</h2>
+        <div class="hint" style="margin-bottom:8px">請客戶於下方框內簽名確認,並確認簽署日期。</div>
+        <div class="sig-wrap"><canvas id="sigPad" width="520" height="170"></canvas></div>
+        <div style="display:flex; gap:16px; align-items:center; margin-top:10px; flex-wrap:wrap">
+          <button type="button" class="btn-ghost" onclick="clearSig()">清除簽名</button>
+          <div style="display:flex; gap:8px; align-items:center">
+            <label style="margin:0">簽署日期</label>
+            <input type="date" id="signDate" style="width:auto" />
+          </div>
+        </div>
+        <div id="editBanner" style="display:none; margin-bottom:12px; padding:10px 14px; border-radius:10px; background:rgba(37,99,235,.1); border:1px solid rgba(37,99,235,.35); color:#1d4ed8; font-size:13px; font-weight:600">
+          ✏️ 編輯中:<b id="editBannerPlate"></b> — 修改或追加後請按「更新工單」
+          <button type="button" class="mini" style="margin-left:8px" onclick="clearForm()">取消編輯</button>
+        </div>
+        <div class="actions">
+          <button class="btn-ghost" onclick="clearForm()">清除</button>
+          <button class="btn-primary" id="submitBtn" onclick="submitOrder()">建立工單</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== 右:工單列表 ===== -->
+    <div>
+      <div class="card">
+        <h2><span class="dot"></span>今日工單 <span id="woCount" class="badge">0</span></h2>
+        <div id="woStats" class="wo-stats"></div>
+        <div class="wo-toolbar" style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:10px">
+          <span id="viewSeg" style="display:inline-flex;gap:6px">
+            <button type="button" class="vbtn on" data-view="cal" onclick="setView('cal')">📅 行事曆</button>
+            <button type="button" class="vbtn" data-view="list" onclick="setView('list')">📋 清單</button>
+            <button type="button" class="vbtn" data-view="table" onclick="setView('table')">📊 總表</button>
+          </span>
+          <select id="fRecep" onchange="setWOFilter()"><option value="">全部專員</option></select>
+          <select id="fBody" onchange="setWOFilter()"><option value="">全部鈑金技師</option></select>
+          <button type="button" id="exportBtn" class="vbtn" onclick="exportCSV()">⬇ 匯出 Excel</button>
+        </div>
+        <div id="calNav" style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+          <button type="button" class="mini" onclick="calMove(-1)">◀ 上個月</button>
+          <b id="calLabel" style="font-size:15px"></b>
+          <button type="button" class="mini" onclick="calMove(1)">下個月 ▶</button>
+        </div>
+        <div id="woList"><div class="empty">尚無工單,建立後會顯示在這裡。</div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="qcModal" class="modal">
+  <div class="qc-card">
+    <div class="qc-actions no-print">
+      <button class="btn-ghost" onclick="closeQC()">關閉</button>
+      <button class="btn-primary" onclick="printQC()">🖨️ 列印完檢表</button>
+    </div>
+    <div id="qcBody"></div>
+  </div>
+</div>
+
+<div id="caseModal" class="modal">
+  <div class="case-card">
+    <div class="case-actions no-print">
+      <button class="btn-ghost" onclick="closeCase()">關閉</button>
+      <button class="btn-primary" onclick="printCase()">🖨️ 列印案號紙</button>
+    </div>
+    <div id="caseBody"></div>
+  </div>
+</div>
+
+<div id="detailModal" class="modal">
+  <div class="detail-card">
+    <div class="detail-head">
+      <div class="htxt">
+        <div class="plate" id="detailPlate"></div>
+        <div class="sub" id="detailSub"></div>
+      </div>
+      <div style="display:flex; gap:8px">
+        <button class="btn-primary no-print" onclick="editOrder(detailOpenId)">✏️ 編輯 / 追加</button>
+        <button class="btn-ghost no-print" onclick="closeDetail()">關閉</button>
+      </div>
+    </div>
+    <div class="detail-body" id="detailBody"></div>
+  </div>
+</div>
+
+<div id="deliverModal" class="modal">
+  <div class="deliver-card">
+    <h3>🚗 交車確認 — <span id="dlgPlate"></span></h3>
+    <p class="sub">改為「已交付」前,請先填寫工資(必填),資料會同步到總表。</p>
+    <label>鈑金工資</label>
+    <input id="dlgBodyWage" type="number" min="0" inputmode="numeric" placeholder="例:12000" />
+    <label>噴漆工資</label>
+    <input id="dlgPaintWage" type="number" min="0" inputmode="numeric" placeholder="例:8000" />
+    <div class="actions" style="margin-top:20px">
+      <button class="btn-ghost" onclick="closeDeliver()">取消</button>
+      <button class="btn-primary" onclick="confirmDeliver()">確認交付</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast" class="toast"></div>
+
+<script>
+/* QRCode 產生器(內嵌,避免外部檔案相依) */
+var QRCode;!function(){function a(a){this.mode=c.MODE_8BIT_BYTE,this.data=a,this.parsedData=[];for(var b=[],d=0,e=this.data.length;e>d;d++){var f=this.data.charCodeAt(d);f>65536?(b[0]=240|(1835008&f)>>>18,b[1]=128|(258048&f)>>>12,b[2]=128|(4032&f)>>>6,b[3]=128|63&f):f>2048?(b[0]=224|(61440&f)>>>12,b[1]=128|(4032&f)>>>6,b[2]=128|63&f):f>128?(b[0]=192|(1984&f)>>>6,b[1]=128|63&f):b[0]=f,this.parsedData=this.parsedData.concat(b)}this.parsedData.length!=this.data.length&&(this.parsedData.unshift(191),this.parsedData.unshift(187),this.parsedData.unshift(239))}function b(a,b){this.typeNumber=a,this.errorCorrectLevel=b,this.modules=null,this.moduleCount=0,this.dataCache=null,this.dataList=[]}function i(a,b){if(void 0==a.length)throw new Error(a.length+"/"+b);for(var c=0;c<a.length&&0==a[c];)c++;this.num=new Array(a.length-c+b);for(var d=0;d<a.length-c;d++)this.num[d]=a[d+c]}function j(a,b){this.totalCount=a,this.dataCount=b}function k(){this.buffer=[],this.length=0}function m(){return"undefined"!=typeof CanvasRenderingContext2D}function n(){var a=!1,b=navigator.userAgent;return/android/i.test(b)&&(a=!0,aMat=b.toString().match(/android ([0-9]\.[0-9])/i),aMat&&aMat[1]&&(a=parseFloat(aMat[1]))),a}function r(a,b){for(var c=1,e=s(a),f=0,g=l.length;g>=f;f++){var h=0;switch(b){case d.L:h=l[f][0];break;case d.M:h=l[f][1];break;case d.Q:h=l[f][2];break;case d.H:h=l[f][3]}if(h>=e)break;c++}if(c>l.length)throw new Error("Too long data");return c}function s(a){var b=encodeURI(a).toString().replace(/\%[0-9a-fA-F]{2}/g,"a");return b.length+(b.length!=a?3:0)}a.prototype={getLength:function(){return this.parsedData.length},write:function(a){for(var b=0,c=this.parsedData.length;c>b;b++)a.put(this.parsedData[b],8)}},b.prototype={addData:function(b){var c=new a(b);this.dataList.push(c),this.dataCache=null},isDark:function(a,b){if(0>a||this.moduleCount<=a||0>b||this.moduleCount<=b)throw new Error(a+","+b);return this.modules[a][b]},getModuleCount:function(){return this.moduleCount},make:function(){this.makeImpl(!1,this.getBestMaskPattern())},makeImpl:function(a,c){this.moduleCount=4*this.typeNumber+17,this.modules=new Array(this.moduleCount);for(var d=0;d<this.moduleCount;d++){this.modules[d]=new Array(this.moduleCount);for(var e=0;e<this.moduleCount;e++)this.modules[d][e]=null}this.setupPositionProbePattern(0,0),this.setupPositionProbePattern(this.moduleCount-7,0),this.setupPositionProbePattern(0,this.moduleCount-7),this.setupPositionAdjustPattern(),this.setupTimingPattern(),this.setupTypeInfo(a,c),this.typeNumber>=7&&this.setupTypeNumber(a),null==this.dataCache&&(this.dataCache=b.createData(this.typeNumber,this.errorCorrectLevel,this.dataList)),this.mapData(this.dataCache,c)},setupPositionProbePattern:function(a,b){for(var c=-1;7>=c;c++)if(!(-1>=a+c||this.moduleCount<=a+c))for(var d=-1;7>=d;d++)-1>=b+d||this.moduleCount<=b+d||(this.modules[a+c][b+d]=c>=0&&6>=c&&(0==d||6==d)||d>=0&&6>=d&&(0==c||6==c)||c>=2&&4>=c&&d>=2&&4>=d?!0:!1)},getBestMaskPattern:function(){for(var a=0,b=0,c=0;8>c;c++){this.makeImpl(!0,c);var d=f.getLostPoint(this);(0==c||a>d)&&(a=d,b=c)}return b},createMovieClip:function(a,b,c){var d=a.createEmptyMovieClip(b,c),e=1;this.make();for(var f=0;f<this.modules.length;f++)for(var g=f*e,h=0;h<this.modules[f].length;h++){var i=h*e,j=this.modules[f][h];j&&(d.beginFill(0,100),d.moveTo(i,g),d.lineTo(i+e,g),d.lineTo(i+e,g+e),d.lineTo(i,g+e),d.endFill())}return d},setupTimingPattern:function(){for(var a=8;a<this.moduleCount-8;a++)null==this.modules[a][6]&&(this.modules[a][6]=0==a%2);for(var b=8;b<this.moduleCount-8;b++)null==this.modules[6][b]&&(this.modules[6][b]=0==b%2)},setupPositionAdjustPattern:function(){for(var a=f.getPatternPosition(this.typeNumber),b=0;b<a.length;b++)for(var c=0;c<a.length;c++){var d=a[b],e=a[c];if(null==this.modules[d][e])for(var g=-2;2>=g;g++)for(var h=-2;2>=h;h++)this.modules[d+g][e+h]=-2==g||2==g||-2==h||2==h||0==g&&0==h?!0:!1}},setupTypeNumber:function(a){for(var b=f.getBCHTypeNumber(this.typeNumber),c=0;18>c;c++){var d=!a&&1==(1&b>>c);this.modules[Math.floor(c/3)][c%3+this.moduleCount-8-3]=d}for(var c=0;18>c;c++){var d=!a&&1==(1&b>>c);this.modules[c%3+this.moduleCount-8-3][Math.floor(c/3)]=d}},setupTypeInfo:function(a,b){for(var c=this.errorCorrectLevel<<3|b,d=f.getBCHTypeInfo(c),e=0;15>e;e++){var g=!a&&1==(1&d>>e);6>e?this.modules[e][8]=g:8>e?this.modules[e+1][8]=g:this.modules[this.moduleCount-15+e][8]=g}for(var e=0;15>e;e++){var g=!a&&1==(1&d>>e);8>e?this.modules[8][this.moduleCount-e-1]=g:9>e?this.modules[8][15-e-1+1]=g:this.modules[8][15-e-1]=g}this.modules[this.moduleCount-8][8]=!a},mapData:function(a,b){for(var c=-1,d=this.moduleCount-1,e=7,g=0,h=this.moduleCount-1;h>0;h-=2)for(6==h&&h--;;){for(var i=0;2>i;i++)if(null==this.modules[d][h-i]){var j=!1;g<a.length&&(j=1==(1&a[g]>>>e));var k=f.getMask(b,d,h-i);k&&(j=!j),this.modules[d][h-i]=j,e--,-1==e&&(g++,e=7)}if(d+=c,0>d||this.moduleCount<=d){d-=c,c=-c;break}}}},b.PAD0=236,b.PAD1=17,b.createData=function(a,c,d){for(var e=j.getRSBlocks(a,c),g=new k,h=0;h<d.length;h++){var i=d[h];g.put(i.mode,4),g.put(i.getLength(),f.getLengthInBits(i.mode,a)),i.write(g)}for(var l=0,h=0;h<e.length;h++)l+=e[h].dataCount;if(g.getLengthInBits()>8*l)throw new Error("code length overflow. ("+g.getLengthInBits()+">"+8*l+")");for(g.getLengthInBits()+4<=8*l&&g.put(0,4);0!=g.getLengthInBits()%8;)g.putBit(!1);for(;;){if(g.getLengthInBits()>=8*l)break;if(g.put(b.PAD0,8),g.getLengthInBits()>=8*l)break;g.put(b.PAD1,8)}return b.createBytes(g,e)},b.createBytes=function(a,b){for(var c=0,d=0,e=0,g=new Array(b.length),h=new Array(b.length),j=0;j<b.length;j++){var k=b[j].dataCount,l=b[j].totalCount-k;d=Math.max(d,k),e=Math.max(e,l),g[j]=new Array(k);for(var m=0;m<g[j].length;m++)g[j][m]=255&a.buffer[m+c];c+=k;var n=f.getErrorCorrectPolynomial(l),o=new i(g[j],n.getLength()-1),p=o.mod(n);h[j]=new Array(n.getLength()-1);for(var m=0;m<h[j].length;m++){var q=m+p.getLength()-h[j].length;h[j][m]=q>=0?p.get(q):0}}for(var r=0,m=0;m<b.length;m++)r+=b[m].totalCount;for(var s=new Array(r),t=0,m=0;d>m;m++)for(var j=0;j<b.length;j++)m<g[j].length&&(s[t++]=g[j][m]);for(var m=0;e>m;m++)for(var j=0;j<b.length;j++)m<h[j].length&&(s[t++]=h[j][m]);return s};for(var c={MODE_NUMBER:1,MODE_ALPHA_NUM:2,MODE_8BIT_BYTE:4,MODE_KANJI:8},d={L:1,M:0,Q:3,H:2},e={PATTERN000:0,PATTERN001:1,PATTERN010:2,PATTERN011:3,PATTERN100:4,PATTERN101:5,PATTERN110:6,PATTERN111:7},f={PATTERN_POSITION_TABLE:[[],[6,18],[6,22],[6,26],[6,30],[6,34],[6,22,38],[6,24,42],[6,26,46],[6,28,50],[6,30,54],[6,32,58],[6,34,62],[6,26,46,66],[6,26,48,70],[6,26,50,74],[6,30,54,78],[6,30,56,82],[6,30,58,86],[6,34,62,90],[6,28,50,72,94],[6,26,50,74,98],[6,30,54,78,102],[6,28,54,80,106],[6,32,58,84,110],[6,30,58,86,114],[6,34,62,90,118],[6,26,50,74,98,122],[6,30,54,78,102,126],[6,26,52,78,104,130],[6,30,56,82,108,134],[6,34,60,86,112,138],[6,30,58,86,114,142],[6,34,62,90,118,146],[6,30,54,78,102,126,150],[6,24,50,76,102,128,154],[6,28,54,80,106,132,158],[6,32,58,84,110,136,162],[6,26,54,82,110,138,166],[6,30,58,86,114,142,170]],G15:1335,G18:7973,G15_MASK:21522,getBCHTypeInfo:function(a){for(var b=a<<10;f.getBCHDigit(b)-f.getBCHDigit(f.G15)>=0;)b^=f.G15<<f.getBCHDigit(b)-f.getBCHDigit(f.G15);return(a<<10|b)^f.G15_MASK},getBCHTypeNumber:function(a){for(var b=a<<12;f.getBCHDigit(b)-f.getBCHDigit(f.G18)>=0;)b^=f.G18<<f.getBCHDigit(b)-f.getBCHDigit(f.G18);return a<<12|b},getBCHDigit:function(a){for(var b=0;0!=a;)b++,a>>>=1;return b},getPatternPosition:function(a){return f.PATTERN_POSITION_TABLE[a-1]},getMask:function(a,b,c){switch(a){case e.PATTERN000:return 0==(b+c)%2;case e.PATTERN001:return 0==b%2;case e.PATTERN010:return 0==c%3;case e.PATTERN011:return 0==(b+c)%3;case e.PATTERN100:return 0==(Math.floor(b/2)+Math.floor(c/3))%2;case e.PATTERN101:return 0==b*c%2+b*c%3;case e.PATTERN110:return 0==(b*c%2+b*c%3)%2;case e.PATTERN111:return 0==(b*c%3+(b+c)%2)%2;default:throw new Error("bad maskPattern:"+a)}},getErrorCorrectPolynomial:function(a){for(var b=new i([1],0),c=0;a>c;c++)b=b.multiply(new i([1,g.gexp(c)],0));return b},getLengthInBits:function(a,b){if(b>=1&&10>b)switch(a){case c.MODE_NUMBER:return 10;case c.MODE_ALPHA_NUM:return 9;case c.MODE_8BIT_BYTE:return 8;case c.MODE_KANJI:return 8;default:throw new Error("mode:"+a)}else if(27>b)switch(a){case c.MODE_NUMBER:return 12;case c.MODE_ALPHA_NUM:return 11;case c.MODE_8BIT_BYTE:return 16;case c.MODE_KANJI:return 10;default:throw new Error("mode:"+a)}else{if(!(41>b))throw new Error("type:"+b);switch(a){case c.MODE_NUMBER:return 14;case c.MODE_ALPHA_NUM:return 13;case c.MODE_8BIT_BYTE:return 16;case c.MODE_KANJI:return 12;default:throw new Error("mode:"+a)}}},getLostPoint:function(a){for(var b=a.getModuleCount(),c=0,d=0;b>d;d++)for(var e=0;b>e;e++){for(var f=0,g=a.isDark(d,e),h=-1;1>=h;h++)if(!(0>d+h||d+h>=b))for(var i=-1;1>=i;i++)0>e+i||e+i>=b||(0!=h||0!=i)&&g==a.isDark(d+h,e+i)&&f++;f>5&&(c+=3+f-5)}for(var d=0;b-1>d;d++)for(var e=0;b-1>e;e++){var j=0;a.isDark(d,e)&&j++,a.isDark(d+1,e)&&j++,a.isDark(d,e+1)&&j++,a.isDark(d+1,e+1)&&j++,(0==j||4==j)&&(c+=3)}for(var d=0;b>d;d++)for(var e=0;b-6>e;e++)a.isDark(d,e)&&!a.isDark(d,e+1)&&a.isDark(d,e+2)&&a.isDark(d,e+3)&&a.isDark(d,e+4)&&!a.isDark(d,e+5)&&a.isDark(d,e+6)&&(c+=40);for(var e=0;b>e;e++)for(var d=0;b-6>d;d++)a.isDark(d,e)&&!a.isDark(d+1,e)&&a.isDark(d+2,e)&&a.isDark(d+3,e)&&a.isDark(d+4,e)&&!a.isDark(d+5,e)&&a.isDark(d+6,e)&&(c+=40);for(var k=0,e=0;b>e;e++)for(var d=0;b>d;d++)a.isDark(d,e)&&k++;var l=Math.abs(100*k/b/b-50)/5;return c+=10*l}},g={glog:function(a){if(1>a)throw new Error("glog("+a+")");return g.LOG_TABLE[a]},gexp:function(a){for(;0>a;)a+=255;for(;a>=256;)a-=255;return g.EXP_TABLE[a]},EXP_TABLE:new Array(256),LOG_TABLE:new Array(256)},h=0;8>h;h++)g.EXP_TABLE[h]=1<<h;for(var h=8;256>h;h++)g.EXP_TABLE[h]=g.EXP_TABLE[h-4]^g.EXP_TABLE[h-5]^g.EXP_TABLE[h-6]^g.EXP_TABLE[h-8];for(var h=0;255>h;h++)g.LOG_TABLE[g.EXP_TABLE[h]]=h;i.prototype={get:function(a){return this.num[a]},getLength:function(){return this.num.length},multiply:function(a){for(var b=new Array(this.getLength()+a.getLength()-1),c=0;c<this.getLength();c++)for(var d=0;d<a.getLength();d++)b[c+d]^=g.gexp(g.glog(this.get(c))+g.glog(a.get(d)));return new i(b,0)},mod:function(a){if(this.getLength()-a.getLength()<0)return this;for(var b=g.glog(this.get(0))-g.glog(a.get(0)),c=new Array(this.getLength()),d=0;d<this.getLength();d++)c[d]=this.get(d);for(var d=0;d<a.getLength();d++)c[d]^=g.gexp(g.glog(a.get(d))+b);return new i(c,0).mod(a)}},j.RS_BLOCK_TABLE=[[1,26,19],[1,26,16],[1,26,13],[1,26,9],[1,44,34],[1,44,28],[1,44,22],[1,44,16],[1,70,55],[1,70,44],[2,35,17],[2,35,13],[1,100,80],[2,50,32],[2,50,24],[4,25,9],[1,134,108],[2,67,43],[2,33,15,2,34,16],[2,33,11,2,34,12],[2,86,68],[4,43,27],[4,43,19],[4,43,15],[2,98,78],[4,49,31],[2,32,14,4,33,15],[4,39,13,1,40,14],[2,121,97],[2,60,38,2,61,39],[4,40,18,2,41,19],[4,40,14,2,41,15],[2,146,116],[3,58,36,2,59,37],[4,36,16,4,37,17],[4,36,12,4,37,13],[2,86,68,2,87,69],[4,69,43,1,70,44],[6,43,19,2,44,20],[6,43,15,2,44,16],[4,101,81],[1,80,50,4,81,51],[4,50,22,4,51,23],[3,36,12,8,37,13],[2,116,92,2,117,93],[6,58,36,2,59,37],[4,46,20,6,47,21],[7,42,14,4,43,15],[4,133,107],[8,59,37,1,60,38],[8,44,20,4,45,21],[12,33,11,4,34,12],[3,145,115,1,146,116],[4,64,40,5,65,41],[11,36,16,5,37,17],[11,36,12,5,37,13],[5,109,87,1,110,88],[5,65,41,5,66,42],[5,54,24,7,55,25],[11,36,12],[5,122,98,1,123,99],[7,73,45,3,74,46],[15,43,19,2,44,20],[3,45,15,13,46,16],[1,135,107,5,136,108],[10,74,46,1,75,47],[1,50,22,15,51,23],[2,42,14,17,43,15],[5,150,120,1,151,121],[9,69,43,4,70,44],[17,50,22,1,51,23],[2,42,14,19,43,15],[3,141,113,4,142,114],[3,70,44,11,71,45],[17,47,21,4,48,22],[9,39,13,16,40,14],[3,135,107,5,136,108],[3,67,41,13,68,42],[15,54,24,5,55,25],[15,43,15,10,44,16],[4,144,116,4,145,117],[17,68,42],[17,50,22,6,51,23],[19,46,16,6,47,17],[2,139,111,7,140,112],[17,74,46],[7,54,24,16,55,25],[34,37,13],[4,151,121,5,152,122],[4,75,47,14,76,48],[11,54,24,14,55,25],[16,45,15,14,46,16],[6,147,117,4,148,118],[6,73,45,14,74,46],[11,54,24,16,55,25],[30,46,16,2,47,17],[8,132,106,4,133,107],[8,75,47,13,76,48],[7,54,24,22,55,25],[22,45,15,13,46,16],[10,142,114,2,143,115],[19,74,46,4,75,47],[28,50,22,6,51,23],[33,46,16,4,47,17],[8,152,122,4,153,123],[22,73,45,3,74,46],[8,53,23,26,54,24],[12,45,15,28,46,16],[3,147,117,10,148,118],[3,73,45,23,74,46],[4,54,24,31,55,25],[11,45,15,31,46,16],[7,146,116,7,147,117],[21,73,45,7,74,46],[1,53,23,37,54,24],[19,45,15,26,46,16],[5,145,115,10,146,116],[19,75,47,10,76,48],[15,54,24,25,55,25],[23,45,15,25,46,16],[13,145,115,3,146,116],[2,74,46,29,75,47],[42,54,24,1,55,25],[23,45,15,28,46,16],[17,145,115],[10,74,46,23,75,47],[10,54,24,35,55,25],[19,45,15,35,46,16],[17,145,115,1,146,116],[14,74,46,21,75,47],[29,54,24,19,55,25],[11,45,15,46,46,16],[13,145,115,6,146,116],[14,74,46,23,75,47],[44,54,24,7,55,25],[59,46,16,1,47,17],[12,151,121,7,152,122],[12,75,47,26,76,48],[39,54,24,14,55,25],[22,45,15,41,46,16],[6,151,121,14,152,122],[6,75,47,34,76,48],[46,54,24,10,55,25],[2,45,15,64,46,16],[17,152,122,4,153,123],[29,74,46,14,75,47],[49,54,24,10,55,25],[24,45,15,46,46,16],[4,152,122,18,153,123],[13,74,46,32,75,47],[48,54,24,14,55,25],[42,45,15,32,46,16],[20,147,117,4,148,118],[40,75,47,7,76,48],[43,54,24,22,55,25],[10,45,15,67,46,16],[19,148,118,6,149,119],[18,75,47,31,76,48],[34,54,24,34,55,25],[20,45,15,61,46,16]],j.getRSBlocks=function(a,b){var c=j.getRsBlockTable(a,b);if(void 0==c)throw new Error("bad rs block @ typeNumber:"+a+"/errorCorrectLevel:"+b);for(var d=c.length/3,e=[],f=0;d>f;f++)for(var g=c[3*f+0],h=c[3*f+1],i=c[3*f+2],k=0;g>k;k++)e.push(new j(h,i));return e},j.getRsBlockTable=function(a,b){switch(b){case d.L:return j.RS_BLOCK_TABLE[4*(a-1)+0];case d.M:return j.RS_BLOCK_TABLE[4*(a-1)+1];case d.Q:return j.RS_BLOCK_TABLE[4*(a-1)+2];case d.H:return j.RS_BLOCK_TABLE[4*(a-1)+3];default:return void 0}},k.prototype={get:function(a){var b=Math.floor(a/8);return 1==(1&this.buffer[b]>>>7-a%8)},put:function(a,b){for(var c=0;b>c;c++)this.putBit(1==(1&a>>>b-c-1))},getLengthInBits:function(){return this.length},putBit:function(a){var b=Math.floor(this.length/8);this.buffer.length<=b&&this.buffer.push(0),a&&(this.buffer[b]|=128>>>this.length%8),this.length++}};var l=[[17,14,11,7],[32,26,20,14],[53,42,32,24],[78,62,46,34],[106,84,60,44],[134,106,74,58],[154,122,86,64],[192,152,108,84],[230,180,130,98],[271,213,151,119],[321,251,177,137],[367,287,203,155],[425,331,241,177],[458,362,258,194],[520,412,292,220],[586,450,322,250],[644,504,364,280],[718,560,394,310],[792,624,442,338],[858,666,482,382],[929,711,509,403],[1003,779,565,439],[1091,857,611,461],[1171,911,661,511],[1273,997,715,535],[1367,1059,751,593],[1465,1125,805,625],[1528,1190,868,658],[1628,1264,908,698],[1732,1370,982,742],[1840,1452,1030,790],[1952,1538,1112,842],[2068,1628,1168,898],[2188,1722,1228,958],[2303,1809,1283,983],[2431,1911,1351,1051],[2563,1989,1423,1093],[2699,2099,1499,1139],[2809,2213,1579,1219],[2953,2331,1663,1273]],o=function(){var a=function(a,b){this._el=a,this._htOption=b};return a.prototype.draw=function(a){function g(a,b){var c=document.createElementNS("http://www.w3.org/2000/svg",a);for(var d in b)b.hasOwnProperty(d)&&c.setAttribute(d,b[d]);return c}var b=this._htOption,c=this._el,d=a.getModuleCount();Math.floor(b.width/d),Math.floor(b.height/d),this.clear();var h=g("svg",{viewBox:"0 0 "+String(d)+" "+String(d),width:"100%",height:"100%",fill:b.colorLight});h.setAttributeNS("http://www.w3.org/2000/xmlns/","xmlns:xlink","http://www.w3.org/1999/xlink"),c.appendChild(h),h.appendChild(g("rect",{fill:b.colorDark,width:"1",height:"1",id:"template"}));for(var i=0;d>i;i++)for(var j=0;d>j;j++)if(a.isDark(i,j)){var k=g("use",{x:String(i),y:String(j)});k.setAttributeNS("http://www.w3.org/1999/xlink","href","#template"),h.appendChild(k)}},a.prototype.clear=function(){for(;this._el.hasChildNodes();)this._el.removeChild(this._el.lastChild)},a}(),p="svg"===document.documentElement.tagName.toLowerCase(),q=p?o:m()?function(){function a(){this._elImage.src=this._elCanvas.toDataURL("image/png"),this._elImage.style.display="block",this._elCanvas.style.display="none"}function d(a,b){var c=this;if(c._fFail=b,c._fSuccess=a,null===c._bSupportDataURI){var d=document.createElement("img"),e=function(){c._bSupportDataURI=!1,c._fFail&&_fFail.call(c)},f=function(){c._bSupportDataURI=!0,c._fSuccess&&c._fSuccess.call(c)};return d.onabort=e,d.onerror=e,d.onload=f,d.src="data:image/gif;base64,iVBORw0KGgoAAAANSUhEUgAAAAUAAAAFCAYAAACNbyblAAAAHElEQVQI12P4//8/w38GIAXDIBKE0DHxgljNBAAO9TXL0Y4OHwAAAABJRU5ErkJggg==",void 0}c._bSupportDataURI===!0&&c._fSuccess?c._fSuccess.call(c):c._bSupportDataURI===!1&&c._fFail&&c._fFail.call(c)}if(this._android&&this._android<=2.1){var b=1/window.devicePixelRatio,c=CanvasRenderingContext2D.prototype.drawImage;CanvasRenderingContext2D.prototype.drawImage=function(a,d,e,f,g,h,i,j){if("nodeName"in a&&/img/i.test(a.nodeName))for(var l=arguments.length-1;l>=1;l--)arguments[l]=arguments[l]*b;else"undefined"==typeof j&&(arguments[1]*=b,arguments[2]*=b,arguments[3]*=b,arguments[4]*=b);c.apply(this,arguments)}}var e=function(a,b){this._bIsPainted=!1,this._android=n(),this._htOption=b,this._elCanvas=document.createElement("canvas"),this._elCanvas.width=b.width,this._elCanvas.height=b.height,a.appendChild(this._elCanvas),this._el=a,this._oContext=this._elCanvas.getContext("2d"),this._bIsPainted=!1,this._elImage=document.createElement("img"),this._elImage.style.display="none",this._el.appendChild(this._elImage),this._bSupportDataURI=null};return e.prototype.draw=function(a){var b=this._elImage,c=this._oContext,d=this._htOption,e=a.getModuleCount(),f=d.width/e,g=d.height/e,h=Math.round(f),i=Math.round(g);b.style.display="none",this.clear();for(var j=0;e>j;j++)for(var k=0;e>k;k++){var l=a.isDark(j,k),m=k*f,n=j*g;c.strokeStyle=l?d.colorDark:d.colorLight,c.lineWidth=1,c.fillStyle=l?d.colorDark:d.colorLight,c.fillRect(m,n,f,g),c.strokeRect(Math.floor(m)+.5,Math.floor(n)+.5,h,i),c.strokeRect(Math.ceil(m)-.5,Math.ceil(n)-.5,h,i)}this._bIsPainted=!0},e.prototype.makeImage=function(){this._bIsPainted&&d.call(this,a)},e.prototype.isPainted=function(){return this._bIsPainted},e.prototype.clear=function(){this._oContext.clearRect(0,0,this._elCanvas.width,this._elCanvas.height),this._bIsPainted=!1},e.prototype.round=function(a){return a?Math.floor(1e3*a)/1e3:a},e}():function(){var a=function(a,b){this._el=a,this._htOption=b};return a.prototype.draw=function(a){for(var b=this._htOption,c=this._el,d=a.getModuleCount(),e=Math.floor(b.width/d),f=Math.floor(b.height/d),g=['<table style="border:0;border-collapse:collapse;">'],h=0;d>h;h++){g.push("<tr>");for(var i=0;d>i;i++)g.push('<td style="border:0;border-collapse:collapse;padding:0;margin:0;width:'+e+"px;height:"+f+"px;background-color:"+(a.isDark(h,i)?b.colorDark:b.colorLight)+';"></td>');g.push("</tr>")}g.push("</table>"),c.innerHTML=g.join("");var j=c.childNodes[0],k=(b.width-j.offsetWidth)/2,l=(b.height-j.offsetHeight)/2;k>0&&l>0&&(j.style.margin=l+"px "+k+"px")},a.prototype.clear=function(){this._el.innerHTML=""},a}();QRCode=function(a,b){if(this._htOption={width:256,height:256,typeNumber:4,colorDark:"#000000",colorLight:"#ffffff",correctLevel:d.H},"string"==typeof b&&(b={text:b}),b)for(var c in b)this._htOption[c]=b[c];"string"==typeof a&&(a=document.getElementById(a)),this._android=n(),this._el=a,this._oQRCode=null,this._oDrawing=new q(this._el,this._htOption),this._htOption.text&&this.makeCode(this._htOption.text)},QRCode.prototype.makeCode=function(a){this._oQRCode=new b(r(a,this._htOption.correctLevel),this._htOption.correctLevel),this._oQRCode.addData(a),this._oQRCode.make(),this._el.title=a,this._oDrawing.draw(this._oQRCode),this.makeImage()},QRCode.prototype.makeImage=function(){"function"==typeof this._oDrawing.makeImage&&(!this._android||this._android>=3)&&this._oDrawing.makeImage()},QRCode.prototype.clear=function(){this._oDrawing.clear()},QRCode.CorrectLevel=d}();
+</script>
+<script>
+/* =========================================================
+   可編輯資料區 — 之後你補資料就改這裡
+   ========================================================= */
+const COLORS = ["黑","白","灰","夜幕灰","閃電銀","烈焰紅","櫻桃紅","藍","冰河藍"];
+// 台灣 14 家產險公司(簡稱)
+const INSURERS = ["泰安","明台","富邦","和泰","新光","華南","國泰","兆豐","第一","旺旺友聯","臺灣","南山","新安東京","中國信託"];
+// 保險理賠資料清單(V 已繳 / X 需補繳)
+const CLAIM_DOCS = ["理賠申請書","駕照影本","公司章","身分證影本","行照影本","私章","存摺影本","事故三聯單影本","施工照","關係證明","查證委託書","完工照","代位求償","授權書","自付額發票","肇責待查","和解書","其他"];
+// 員工名單:{name 英文名, id 員工編號, zh 中文名}
+const RECEPTIONISTS = [   // 接待專員
+  {name:"Enzo Wang",  id:"1237323", zh:"王鵬竣"},
+  {name:"Wison Lin",  id:"1237299", zh:"林漢維"},
+  {name:"Penny Ku",   id:"1237275", zh:"古佩軒"},
+];
+const BODY_TECHS = [      // 鈑金技師
+  {name:"Frank Jiang",    id:"1248027", zh:"江恆宇"},
+  {name:"Hsiao Chi Lo",   id:"1237245", zh:"羅小淇"},
+  {name:"Shang Hua Yang", id:"1237296", zh:"楊尚樺"},
+  {name:"Ming-Jui Chou",  id:"1268988", zh:"周明叡"},
+];
+const PAINT_TECHS = [     // 噴漆技師
+  {name:"Felix Kuo",       id:"1242372", zh:"郭峻輔"},
+  {name:"Hsin Hung Lin",   id:"1237248", zh:"林信宏"},
+  {name:"Jack Chien",      id:"936396",  zh:"錢盈睿"},
+  {name:"Jeff Lin",        id:"953973",  zh:"林威志"},
+  {name:"Sheng Hong Cai",  id:"1237335", zh:"蔡聖弘"},
+  {name:"Kai-Xiang Zhang", id:"1319682", zh:"張凱翔"},
+];
+
+// 互檢技師可選名單(鈑金 + 噴漆)
+const ALL_TECHS = BODY_TECHS.concat(PAINT_TECHS);
+
+// 噴漆三段製程打卡:土底 → 噴漆 → 打蠟
+const PAINT_STAGES = [
+  {key:"primer", label:"土底"},
+  {key:"color",  label:"噴漆"},
+  {key:"wax",    label:"打蠟"},
+];
+
+// 派工進度(英文 + 中文備註)
+const STATUS = [
+  {en:"Waiting for Repair Plan", zh:"等待維修計畫"},
+  {en:"In Repair Plan",          zh:"維修計畫中(定損估價)"},
+  {en:"Waiting for Approval",    zh:"等待核准(保險/客戶)"},
+  {en:"Part Hold",               zh:"零件待料"},
+  {en:"Ready for Production",    zh:"準備進廠施工"},
+  {en:"In Production",           zh:"施工中"},
+  {en:"Mechanical",              zh:"機械維修"},
+  {en:"Body",                    zh:"鈑金"},
+  {en:"Prep",                    zh:"前置(遮蔽)準備"},
+  {en:"Paint",                   zh:"噴漆"},
+  {en:"Paint Correction",        zh:"漆面修正/研磨"},
+  {en:"Reassembly",              zh:"組裝復原"},
+  {en:"Cleanup",                 zh:"清潔"},
+  {en:"QC",                      zh:"品管檢查"},
+  {en:"Sublet Hold",             zh:"外包待處理"},
+  {en:"Service Complete",        zh:"維修完成"},
+  {en:"Ready for Pick Up",       zh:"可取車"},
+  {en:"Delivered",               zh:"已交付"},
+  {en:"Cancelled",               zh:"已取消"},
+];
+function statusColor(i){
+  const s = (STATUS[i]||{}).en || "";
+  if(s === "Cancelled") return "#9aa0ab";
+  if(s === "Service Complete" || s === "Ready for Pick Up" || s === "Delivered") return "#16a34a";
+  if(s.includes("Hold") || s.includes("Waiting")) return "#d97706";
+  return "#2563eb";
+}
+
+/* =========================================================
+   完檢表(鈑噴品質過程 / 最終檢驗單)— 可線上勾選、可列印
+   之後要增減檢查項目就改這裡
+   ========================================================= */
+const DAMAGE_POSITIONS = ["前保","左前葉","右前葉","左前門","右前門","左後門","右後門","左裙邊","右裙邊","左後葉","右後葉","後保"];
+// 完檢表(依「特斯拉直營鈑噴中心 — 鈑噴品質過程/最終檢驗單」規定版本)
+const QC_FORM = [
+  { key:"body", title:"鈑金拆解修復", type:"check", techLabel:"鈑金技師", pool:"body", cross:true, items:[
+    "關閉遠端存取","車輛三件套完整，接車前進行環車檢查並核對工項","在維修作業前進行斷電",
+    "更換玻璃時粘接面塗抹底塗","結構維修切割位置是否正確","維修過程中對未修復區域進行安全遮蔽防護",
+    "經鈑金修復後表面平整且與正常面比較沒有凹凸","焊接部位的焊點正常，無裂縫、無孔洞、無夾渣",
+    "完全去除修理表面的整形拉痕、鏽跡、污漬","維修後車身線條平順對齊","羽狀邊坡面均勻",
+    "涉及做底、噴塗相關的附件已拆除","車輛拆下附件和受損的配件按要求存放","對車身和新件進行密封處理",
+    "對多餘的粘接劑和密封膠進行清除","鈑金維修專案已經按照工單要求完成"
+  ]},
+  { key:"prep", title:"噴漆前處理", type:"check", techLabel:"中塗技師", pool:"paint", cross:true, items:[
+    "製作羽狀邊","原子灰平整，筋線合理，無凹凸，無沙眼","無明顯的砂紙磨痕","合理遮蔽車輛",
+    "原子灰表面和舊塗膜連接處銜接平順自然","中塗底漆有足夠的填充，無流掛","中塗及舊漆膜打磨徹底且無過度打磨",
+    "保持維修部位相鄰板件的清潔"
+  ]},
+  { key:"paint", title:"噴塗面漆", type:"check", techLabel:"噴漆技師", pool:"paint", cross:true, items:[
+    "合理遮蔽，無污染其他部位","色漆色彩均已完全遮蓋","漆面達到無流掛，縮孔，光澤度飽滿",
+    "噴塗板件與未噴塗板件顏色一致","烘烤後無失光，氣泡，溶劑泡",
+    "烘烤乾燥 __________分鐘（由噴漆技師填寫乾燥時間）"
+  ]},
+  { key:"assy", title:"鈑金裝配", type:"check", techLabel:"鈑金技師", pool:"body", cross:true, items:[
+    "安裝外飾件,無鬆動,歪斜,漏裝等現象","各部件之間縫隙應在標準範圍內並均勻對稱",
+    "維修部件的裝配沒有和其他部件干涉","車輛電子元件功能正常（燈光,喇叭,攝像頭等）",
+    "車內清潔乾淨，車內客戶物品已重定","部件的功能檢查（車門開啟,雷達,門鎖,玻璃升降）",
+    "安裝後的外觀整潔，漆面無碰傷","施工完成後需要進行淋水試驗（玻璃,門,後葉子板）",
+    "車輛進行路試（風噪,異響,輔助駕駛功能）","所有維修項目都按照工單完成"
+  ]},
+  { key:"polish", title:"拋光清潔", type:"check", techLabel:"拋光技師", pool:"paint", cross:true, items:[
+    "拋光後不遺留塵點，橘紋，流掛，淺縮孔，拋光痕","紋理、光澤和相鄰板件相比較過度自然",
+    "漆料沒有附著在未修補部位或零件表面","駁口無斷層，無其他噴漆不良情況出現",
+    "清理蠟痕和遮蔽材料，徹底洗車清潔","所有維修項目都按照工單完成"
+  ]},
+  { key:"elec", title:"機電", type:"yesno", techLabel:"機電技師", pool:"all", cross:false, items:[
+    "配件功能正常，已匹配校準/固件已升級","已做四輪定位/輪胎動平衡","車輛路試無異常"
+  ]},
+  { key:"final", title:"總檢", type:"yesno", techLabel:null, pool:null, cross:false,
+    note:"備註:1、較大事故和重大事故:24 項 + 維修項檢驗。 2、較輕事故和小維修:*項 + 維修項檢驗(根據維修項檢查 # 項)。",
+    items:[
+    "*核對工單專案是否明確/完工","*互檢單完整填寫並簽字","*儀錶和螢幕無故障報警",
+    "*內飾清潔，無遺漏工具和配件","*全車燈光工作正常（車內,車外）","*鑰匙遙控功能正常或卡片鑰匙平整",
+    "雨刮和噴水工作正常","四門玻璃升降正常","空調製冷/制熱正常","喇叭（高低音）",
+    "車內音箱工作正常","四門兩蓋開啟關閉功能正常","前後輔助雷達及倒車影像工作正常",
+    "維修區域周邊部件無油漆污染,無飛漆，無蠟粉","板件A區漆面無塵點,無流掛,無砂眼,無砂紙痕 等瑕疵",
+    "維修板件周邊，縫隙均勻對稱","修復表面應平整，筋線齊平","緊固底盤螺絲後是否標記",
+    "檢查所有物理按鍵工作正常","底盤大電池是否有明顯磕痕",
+    "#輪胎螺絲是否緊固(工單有機電「懸架或底盤」工項時，必檢項)",
+    "#12V電池是否緊固及高壓斷開標識是否明顯(維修板件時有「修復字樣或機電工項」時，必檢項)",
+    "*交車電量最低 300km（與前臺協商）","*胎壓是否在正常"
+  ]},
+];
+
+/* =========================================================
+   Tesla 車身碼(VIN)離線解碼
+   ========================================================= */
+const WMI = {
+  "5YJ":"美國 Fremont 廠","7SA":"美國 Austin 廠","LRW":"中國 上海廠",
+  "XP7":"德國 柏林廠","SFZ":"英國"
+};
+const MODELS = {"S":"Model S","3":"Model 3","X":"Model X","Y":"Model Y","R":"Roadster","C":"Cybertruck"};
+const YEARS = {A:2010,B:2011,C:2012,D:2013,E:2014,F:2015,G:2016,H:2017,J:2018,K:2019,
+  L:2020,M:2021,N:2022,P:2023,R:2024,S:2025,T:2026,V:2027,W:2028,X:2029,Y:2030};
+
+// 動力版本推測:依車身碼「第 8 碼」馬達代碼,不同車型意義不同(2024-2026 常用),為推測值可手動修正
+// Model Y / Model 3 / Model S・X 各有一組對照表
+const DRIVE8 = {
+  Y: {  // Model Y(含 Juniper 刷新版)
+    S:"後驅長續航 RWD LR", R:"後驅長續航 RWD LR", D:"後驅長續航 RWD LR", J:"後驅長續航 RWD LR",
+    E:"四驅長續航 AWD LR(非 Performance)", K:"四驅長續航 AWD LR(非 Performance)",
+    F:"Dual Motor Performance 高性能", L:"Dual Motor Performance 高性能",
+  },
+  "3": {  // Model 3(含 Highland)
+    A:"後驅 RWD", J:"後驅 RWD", R:"後驅 RWD",
+    B:"四驅長續航 AWD LR", K:"四驅長續航 AWD LR",
+    C:"Performance 高性能", L:"Performance 高性能", T:"Performance 高性能(Highland)",
+  },
+  SX: {  // Model S / Model X(Refresh / Plaid)
+    "5":"四驅長續航 Dual Motor LR(刷新版)", "6":"Plaid 三馬達高性能",
+  },
+};
+function decodeDrivetrain(vin, model){
+  const c = vin[7];
+  let map;
+  if(model === "Model Y") map = DRIVE8.Y;
+  else if(model === "Model 3") map = DRIVE8["3"];
+  else if(model === "Model S" || model === "Model X") map = DRIVE8.SX;
+  else map = Object.assign({}, DRIVE8["3"], DRIVE8.Y, DRIVE8.SX); // 未知車型:綜合推測
+  return map[c] || "";
+}
+
+function decodeTeslaVIN(raw){
+  const vin = (raw||"").trim().toUpperCase().replace(/\s/g,"");
+  const r = {vin, ok:false, notes:[]};
+  if(vin.length !== 17){ r.error = "車身碼需為 17 碼(目前 "+vin.length+" 碼)"; return r; }
+  if(/[IOQ]/.test(vin)){ r.notes.push("含無效字元 I/O/Q"); }
+  const wmi = vin.slice(0,3);
+  if(!WMI[wmi]) r.notes.push("非 Tesla 常見廠碼(仍嘗試解碼)");
+  r.model = MODELS[vin[3]] || "未知("+vin[3]+")";
+  r.year  = YEARS[vin[9]] || "未知("+vin[9]+")";
+  r.drivetrain = decodeDrivetrain(vin, r.model);
+  r.ok = true;
+  return r;
+}
+
+/* =========================================================
+   UI 初始化
+   ========================================================= */
+function fill(id, arr, first="請選擇"){
+  const s = document.getElementById(id);
+  s.innerHTML = "<option value=''>"+first+"</option>" + arr.map(x=>`<option>${x}</option>`).join("");
+}
+function fillStaff(id, arr){
+  const s = document.getElementById(id);
+  s.innerHTML = "<option value=''>請選擇</option>" +
+    arr.map(x=>`<option value="${x.name}｜${x.zh}｜${x.id}">${x.name}(${x.zh})</option>`).join("");
+}
+function fillStatus(id){
+  document.getElementById(id).innerHTML =
+    STATUS.map((s,i)=>`<option value="${i}">${s.en}(${s.zh})</option>`).join("");
+}
+fill("color", COLORS, "請選擇車色");
+fill("insurer", INSURERS, "請選擇保險公司");
+fillStaff("receptionist", RECEPTIONISTS);
+fillStatus("statusSel");
+
+const vinEl = document.getElementById("vin");
+vinEl.addEventListener("input", ()=>{ vinEl.value = vinEl.value.toUpperCase(); genVinQR(); });
+
+// 依車身碼(VIN)產生 QR Code
+function genVinQR(){
+  const wrap = document.getElementById("vinQrWrap");
+  const box  = document.getElementById("vinQr");
+  if(!wrap || !box) return;
+  const vin = (document.getElementById("vin").value || "").trim().toUpperCase();
+  box.innerHTML = "";
+  if(!vin){ wrap.style.display = "none"; return; }
+  wrap.style.display = "";
+  new QRCode(box, {text:vin, width:150, height:150, correctLevel:QRCode.CorrectLevel.M});
+}
+
+function doDecode(){
+  const out = document.getElementById("decodeOut");
+  const res = decodeTeslaVIN(vinEl.value);
+  out.classList.add("show");
+  if(res.error){
+    out.innerHTML = `<div class="line"><span class="k">辨識結果</span><span class="v"><span class="badge err">${res.error}</span></span></div>`;
+    return;
+  }
+  document.getElementById("model").value = res.model;
+  document.getElementById("year").value  = res.year;
+  document.getElementById("version").value = res.drivetrain;
+  genVinQR();
+
+  const driveHtml = res.drivetrain
+    ? `${res.drivetrain} <span class="badge warn">推測值,請確認</span>`
+    : `<span class="badge warn">無法判讀,請手動輸入</span>`;
+  const noteHtml = res.notes.length ? `<span class="badge warn">${res.notes.join("、")}</span>` : `<span class="badge">辨識完成</span>`;
+  out.innerHTML = `
+    <div class="line"><span class="k">車型</span><span class="v">${res.model}</span></div>
+    <div class="line"><span class="k">年份</span><span class="v">${res.year}</span></div>
+    <div class="line"><span class="k">動力版本</span><span class="v">${driveHtml}</span></div>
+    <div class="line"><span class="k">辨識狀態</span><span class="v">${noteHtml}</span></div>
+  `;
+}
+
+/* =========================================================
+   損傷部位(車身圖)
+   ========================================================= */
+let dmg = {};   // { 部位: "BP" | "N" }   BP=鈑修, N=換新
+let claimDocs = {};  // { 項目: "V"(已繳) | "X"(需補繳) }
+// 特殊部位:可選左右;車門門檻再分前後
+const SPECIAL_PARTS = [
+  {base:"牛腿",     sides:["左","右"]},
+  {base:"戶定",     sides:["左","右"]},
+  {base:"車門門檻", sides:["左前","右前","左後","右後"]},
+];
+document.getElementById("carSvg").addEventListener("click", e=>{
+  const el = e.target.closest("[data-part]");
+  if(el) togglePart(el.getAttribute("data-part"));
+});
+function togglePart(part){
+  if(!(part in dmg)) dmg[part] = "BP";        // 第一下 → BP
+  else if(dmg[part] === "BP") dmg[part] = "N"; // 第二下 → N
+  else delete dmg[part];                       // 第三下 → 取消
+  updateDiagram(); renderDmgList(); renderQuickParts();
+}
+function removePart(part){ delete dmg[part]; updateDiagram(); renderDmgList(); renderQuickParts(); }
+function addCustomPart(){
+  const inp = document.getElementById("customPart");
+  const name = inp.value.trim();
+  if(!name) return;
+  if(!dmg[name]) dmg[name] = "BP";
+  inp.value = "";
+  updateDiagram(); renderDmgList(); renderQuickParts();
+}
+function setDmgMode(part, mode){ if(part in dmg){ dmg[part] = mode; updateDiagram(); } }
+function clearDmg(){
+  if(!Object.keys(dmg).length){ toast("目前沒有已選部位"); return; }
+  dmg = {}; updateDiagram(); renderDmgList(); renderQuickParts();
+  toast("已清空所有已選部位 ✓");
+}
+const SVGNS = "http://www.w3.org/2000/svg";
+function updateDiagram(){
+  const svg = document.getElementById("carSvg");
+  svg.querySelectorAll(".mode-badge").forEach(n=>n.remove());  // 先移除舊標記
+  svg.querySelectorAll("[data-part]").forEach(el=>{
+    const part = el.getAttribute("data-part");
+    const on = Object.prototype.hasOwnProperty.call(dmg, part);
+    el.classList.toggle("sel", on);
+    if(!on) return;
+    const mode = dmg[part];
+    if(mode !== "BP" && mode !== "N") return;   // 空白(未定)不畫標記
+    let bb; try{ bb = el.getBBox(); }catch(e){ return; }
+    const t = document.createElementNS(SVGNS, "text");
+    t.setAttribute("class", "mode-badge " + (mode === "N" ? "n" : "bp"));
+    t.setAttribute("x", bb.x + bb.width/2);
+    t.setAttribute("y", bb.y + bb.height/2 + 9);
+    t.textContent = mode;   // 在圖上直接標出 BP / N
+    svg.appendChild(t);
+  });
+}
+function renderQuickParts(){
+  document.getElementById("quickParts").innerHTML = SPECIAL_PARTS.map(g=>`
+    <div class="qp-group">
+      <span class="qp-title">${g.base}</span>
+      ${g.sides.map(s=>{ const name = s + g.base; const has = (name in dmg); const m = dmg[name];
+        return `<button type="button" class="qp ${has?"on":""}" onclick="togglePart('${name}')">${s}${(m==="BP"||m==="N")?` · ${m}`:""}</button>`;
+      }).join("")}
+    </div>`).join("");
+}
+function renderDmgList(){
+  const box = document.getElementById("dmgList");
+  const parts = Object.keys(dmg);
+  if(!parts.length){ box.innerHTML = `<div class="dmg-empty">尚未選擇部位。</div>`; return; }
+  box.innerHTML = parts.map(p=>`
+    <div class="dmg-row">
+      <span class="dmg-name">${p}</span>
+      <select onchange="setDmgMode('${p}', this.value)">
+        <option value=""   ${dmg[p]===""?"selected":""}>空白</option>
+        <option value="BP" ${dmg[p]==="BP"?"selected":""}>BP</option>
+        <option value="N"  ${dmg[p]==="N"?"selected":""}>N</option>
+      </select>
+      <button class="del" title="移除" onclick="removePart('${p}')">×</button>
+    </div>`).join("");
+}
+
+/* =========================================================
+   留鑰匙 / 四輪定位 分段勾選
+   ========================================================= */
+let keyKept = "", alignment = "";
+function setSeg(group, v){
+  if(group === "key"){ keyKept = v; } else { alignment = v; }
+  const wrap = document.getElementById(group === "key" ? "segKey" : "segAlign");
+  wrap.querySelectorAll(".seg-opt").forEach(b=> b.classList.toggle("on", b.dataset.val === v));
+}
+
+/* =========================================================
+   接車打卡
+   ========================================================= */
+let checkinTime = "";
+// 編輯中的工單 id(null = 建立新工單)
+let editingId = null;
+// 派工時間:當「維修進度」派工到「鈑金」時自動產生(時間格式同接車打卡)
+let dispatchAt = 0;
+function fmtDispatch(ts){ return new Date(ts).toLocaleString("zh-TW", {hour12:false}); }
+function dispatchMD(ts){ const d = new Date(ts); return `${d.getMonth()+1}/${d.getDate()}`; }
+function onDispatchChange(){
+  const st = STATUS[+document.getElementById("statusSel").value] || {};
+  if(st.zh === "鈑金" && !dispatchAt) dispatchAt = Date.now();
+  renderDispatchTime();
+}
+function renderDispatchTime(){
+  const box = document.getElementById("dispatchBox");
+  const el = document.getElementById("dispatchTime");
+  if(dispatchAt){ el.textContent = fmtDispatch(dispatchAt); el.classList.remove("empty"); box.style.display = ""; }
+  else { box.style.display = "none"; }
+}
+// 選擇接待專員時自動打卡接車(第一次選擇即記錄時間;之後換人只更新名字)
+function onReceptionistChange(){
+  const rec = val("receptionist");
+  if(!rec) return;
+  if(!checkinTime) checkinTime = new Date().toLocaleString("zh-TW", {hour12:false});
+  const el = document.getElementById("punchTime");
+  el.textContent = `${staffLabel(rec)} · ${checkinTime}`;
+  el.classList.remove("empty");
+  toast("已自動打卡接車 ✓");
+}
+function punchIn(){
+  const rec = val("receptionist");
+  if(!rec){ toast("請先選擇接待專員再打卡", true); return; }
+  checkinTime = new Date().toLocaleString("zh-TW", {hour12:false});
+  const el = document.getElementById("punchTime");
+  el.textContent = `${staffLabel(rec)} · ${checkinTime}`;
+  el.classList.remove("empty");
+  toast("接車打卡完成 ✓");
+}
+// 工單上的技師打卡:鈑金 / 噴漆
+function punchOrder(id, role){
+  const list = load(); const o = list.find(x=>x.id===id); if(!o) return;
+  const t = new Date().toLocaleString("zh-TW", {hour12:false});
+  if(role === "body"){ o.bodyCheckin = t; } else { o.paintCheckin = t; }
+  save(list); render(); refreshQC();
+  toast((role === "body" ? "鈑金" : "噴漆") + "開工打卡完成 ✓");
+}
+// 工單卡片:完工 / 互檢打卡(工種層級,會自動帶入該工種在完檢表的所有區段)
+function punchTradeDone(id, trade, stage){  // stage: "Complete" | "Cross"
+  const list = load(); const o = list.find(x=>x.id===id); if(!o) return;
+  const t = new Date().toLocaleString("zh-TW", {hour12:false});
+  o[trade + stage] = t;
+  o.completeTime = t;
+  save(list); render(); refreshQC();
+  toast((trade === "body" ? "鈑金" : "噴漆") + (stage === "Complete" ? "完工" : "互檢") + "打卡完成 ✓");
+}
+function setTradeCrossBy(id, trade, v){
+  const list = load(); const o = list.find(x=>x.id===id); if(!o) return;
+  o[trade + "CrossBy"] = v; save(list); render(); refreshQC();
+}
+function tradeRow(o, trade){
+  if(!o[trade + "Tech"]) return "";  // 未指派該工種技師則不顯示
+  const label   = trade === "body" ? "🔧 鈑金" : "🎨 噴漆";
+  const start   = o[trade + "Checkin"];
+  const done    = o[trade + "Complete"];
+  const cross   = o[trade + "Cross"];
+  const crossBy = o[trade + "CrossBy"] || "";
+  const startHtml = start ? `<span class="chip">開工:${start}</span>`
+    : `<button class="mini" onclick="punchOrder(${o.id},'${trade}')">開工打卡</button>`;
+  const doneHtml  = done ? `<span class="chip">完工:${done}</span>`
+    : `<button class="mini" onclick="punchTradeDone(${o.id},'${trade}','Complete')">完工打卡</button>`;
+  let crossHtml;
+  if(cross){
+    crossHtml = `<span class="chip">互檢:${crossBy?crossBy+" ":""}${cross}</span>`;
+  }else{
+    const sel = `<select class="mini-sel" onchange="setTradeCrossBy(${o.id},'${trade}',this.value)"><option value="">互檢技師…</option>${
+      ALL_TECHS.map(t=>{ const n=t.name+"("+t.zh+")"; return `<option ${crossBy===n?"selected":""}>${n}</option>`; }).join("")
+    }</select>`;
+    crossHtml = `${sel}<button class="mini" onclick="punchTradeDone(${o.id},'${trade}','Cross')">互檢打卡</button>`;
+  }
+  return `<div class="punch-row"><span class="punch-label">${label}</span>${startHtml}${doneHtml}${crossHtml}</div>`;
+}
+// 噴漆三段(土底/噴漆/打蠟)開工·完工打卡
+function punchPaintStage(id, stage, phase){  // phase: "start" | "finish"
+  const list = load(); const o = list.find(x=>x.id===id); if(!o) return;
+  o.paintStages = o.paintStages || {};
+  o.paintStages[stage] = o.paintStages[stage] || {};
+  const t = new Date().toLocaleString("zh-TW", {hour12:false});
+  o.paintStages[stage][phase] = t;
+  if(phase === "finish") o.completeTime = t;
+  save(list); render(); refreshQC();
+  const lbl = (PAINT_STAGES.find(s=>s.key===stage)||{}).label || "";
+  toast("噴漆·" + lbl + (phase === "start" ? "開工" : "完工") + "打卡完成 ✓");
+}
+// 工單卡片:噴漆列(三段製程 + 一個整體互檢)
+function paintRow(o){
+  if(!o.paintTech) return "";
+  const ps = o.paintStages || {};
+  const stageRows = PAINT_STAGES.map(s=>{
+    const st = ps[s.key] || {};
+    const startHtml = st.start ? `<span class="chip">開工:${st.start}</span>`
+      : `<button class="mini" onclick="punchPaintStage(${o.id},'${s.key}','start')">開工</button>`;
+    const doneHtml  = st.finish ? `<span class="chip">完工:${st.finish}</span>`
+      : `<button class="mini" onclick="punchPaintStage(${o.id},'${s.key}','finish')">完工</button>`;
+    return `<div class="punch-row sub"><span class="punch-label sub">${s.label}</span>${startHtml}${doneHtml}</div>`;
+  }).join("");
+  const cross = o.paintCross, crossBy = o.paintCrossBy || "";
+  let crossHtml;
+  if(cross){
+    crossHtml = `<span class="chip">互檢:${crossBy?crossBy+" ":""}${cross}</span>`;
+  }else{
+    const sel = `<select class="mini-sel" onchange="setTradeCrossBy(${o.id},'paint',this.value)"><option value="">互檢技師…</option>${
+      ALL_TECHS.map(t=>{ const n=t.name+"("+t.zh+")"; return `<option ${crossBy===n?"selected":""}>${n}</option>`; }).join("")
+    }</select>`;
+    crossHtml = `${sel}<button class="mini" onclick="punchTradeDone(${o.id},'paint','Cross')">互檢打卡</button>`;
+  }
+  return `<div class="punch-row"><span class="punch-label">🎨 噴漆</span></div>${stageRows}<div class="punch-row sub"><span class="punch-label sub">互檢</span>${crossHtml}</div>`;
+}
+function fmtEta(v){ return v ? String(v).replace("T", " ") : ""; }
+function shortDT(v){ return v ? String(v).replace("T"," ").replace(/:\d{2}$/,"") : ""; }
+
+/* =========================================================
+   付款類型 / 保險公司
+   ========================================================= */
+function onPaymentChange(){
+  const t = document.getElementById("paymentType").value;
+  const wrap = document.getElementById("insurerWrap");
+  const isIns = (t === "保險本車" || t === "保險財車");
+  wrap.style.display = isIns ? "" : "none";
+  if(!isIns) document.getElementById("insurer").selectedIndex = 0;
+}
+function computePaymentLabel(type, insurer){
+  if(!type) return "";
+  if(type === "保險本車") return (insurer || "") + "本車";
+  if(type === "保險財車") return (insurer || "") + "財車";
+  return type;   // 自費 / 保固 / DD
+}
+// 將口語/簡寫的部位名稱對應到損傷圖表的正式名稱(讓圖表也能同步標記)
+const PART_ALIAS = {
+  "左前葉":"左前葉子板","右前葉":"右前葉子板","左後葉":"左後葉子板","右後葉":"右後葉子板",
+  "前葉":"左前葉子板",
+  "左前門":"左前車門","右前門":"右前車門","左後門":"左後車門","右後門":"右後車門",
+  "引擎蓋":"前蓋","尾門":"後蓋",
+  "天窗":"天窗(玻璃車頂)","車頂":"天窗(玻璃車頂)",
+  "前檔":"前擋風玻璃","前擋":"前擋風玻璃","後檔":"後擋風玻璃","後擋":"後擋風玻璃",
+  "左後視鏡":"左後視鏡","右後視鏡":"右後視鏡"
+};
+function canonPart(name){ return PART_ALIAS[name] || name; }
+// 解析理賠字串,例:富邦本52626D103173林宜賢04-23850866#228前保BP.左前葉BP
+function parsePayment(raw){
+  let s = (raw || "").trim();
+  const r = { parts: [] };
+  // 1) 保險公司(比對名單,取最長者)
+  const hit = INSURERS.filter(i => s.startsWith(i)).sort((a,b)=>b.length-a.length)[0];
+  if(hit){ r.insurer = hit; s = s.slice(hit.length); }
+  // 2) 本 / 財
+  if(s[0] === "本"){ r.paymentType = "保險本車"; s = s.slice(1); }
+  else if(s[0] === "財"){ r.paymentType = "保險財車"; s = s.slice(1); }
+  // 3) 案號(開頭的英數字)
+  const mCase = s.match(/^[A-Za-z0-9]+/);
+  if(mCase){ r.caseNo = mCase[0]; s = s.slice(mCase[0].length); }
+  // 4) 經辦(開頭的中文,直到遇到數字/電話)
+  const mName = s.match(/^[\u4e00-\u9fa5]+/);
+  if(mName){ r.agent = mName[0]; s = s.slice(mName[0].length); }
+  // 5) 電話(數字、-、括號、#分機)
+  const mPhone = s.match(/^[0-9()#\-+ ]+/);
+  if(mPhone){ r.agentPhone = mPhone[0].trim(); s = s.slice(mPhone[0].length); }
+  // 6) 受損部位(以 . 、 , ; 空白 分隔,尾端 BP/N 為維修方式)
+  s.split(/[.\u3002,、;；\s]+/).filter(Boolean).forEach(tok=>{
+    const m = tok.match(/(BP|N)$/i);
+    let mode = "", name = tok;
+    if(m){ mode = m[1].toUpperCase(); name = tok.slice(0, tok.length - m[1].length); }
+    if(name) r.parts.push({ name, mode });
+  });
+  return r;
+}
+function parseAndFillPayment(){
+  const raw = document.getElementById("payParse").value;
+  if(!raw.trim()){ toast("請先貼上理賠字串", true); return; }
+  const r = parsePayment(raw);
+  if(r.paymentType){ document.getElementById("paymentType").value = r.paymentType; onPaymentChange(); }
+  if(r.insurer){ document.getElementById("insurer").value = r.insurer; }
+  if("caseNo"     in r) document.getElementById("caseNo").value     = r.caseNo || "";
+  if("agent"      in r) document.getElementById("agent").value      = r.agent || "";
+  if("agentPhone" in r) document.getElementById("agentPhone").value = r.agentPhone || "";
+  (r.parts || []).forEach(p=>{ dmg[canonPart(p.name)] = p.mode || ""; });   // 連動受損部位(對應圖表名稱)
+  updateDiagram(); renderDmgList(); renderQuickParts();
+  toast("已解析並帶入 ✓");
+}
+
+/* =========================================================
+   保險理賠資料(V 已繳 / X 需補繳,點格子循環)
+   ========================================================= */
+function renderClaims(){
+  document.getElementById("claimGrid").innerHTML = CLAIM_DOCS.map(it=>{
+    const v = claimDocs[it] || "";
+    const cls = v === "V" ? "v" : v === "X" ? "x" : "";
+    return `<div class="claim-item" onclick="toggleClaim('${it}')"><span class="cbox ${cls}"></span><span>${it}</span></div>`;
+  }).join("");
+}
+function toggleClaim(it){
+  const v = claimDocs[it] || "";
+  claimDocs[it] = v === "" ? "V" : v === "V" ? "X" : "";
+  renderClaims();
+}
+
+/* =========================================================
+   客戶簽名板(平板可手寫)
+   ========================================================= */
+let sigCtx = null, sigHasDrawn = false;
+function initSigPad(){
+  const c = document.getElementById("sigPad");
+  if(!c) return;
+  const ctx = c.getContext("2d");
+  sigCtx = ctx; ctx.lineWidth = 2.4; ctx.lineCap = "round"; ctx.lineJoin = "round"; ctx.strokeStyle = "#111";
+  let drawing = false, last = null;
+  const pos = e=>{
+    const r = c.getBoundingClientRect();
+    const p = (e.touches && e.touches[0]) ? e.touches[0] : e;
+    return { x:(p.clientX - r.left) * (c.width / r.width), y:(p.clientY - r.top) * (c.height / r.height) };
+  };
+  const start = e=>{ drawing = true; last = pos(e); e.preventDefault(); };
+  const move  = e=>{ if(!drawing) return; const p = pos(e);
+    ctx.beginPath(); ctx.moveTo(last.x, last.y); ctx.lineTo(p.x, p.y); ctx.stroke();
+    last = p; sigHasDrawn = true; e.preventDefault(); };
+  const end   = ()=>{ drawing = false; };
+  c.addEventListener("mousedown", start); c.addEventListener("mousemove", move); window.addEventListener("mouseup", end);
+  c.addEventListener("touchstart", start, {passive:false});
+  c.addEventListener("touchmove",  move,  {passive:false});
+  c.addEventListener("touchend",   end);
+}
+function clearSig(){ if(sigCtx) sigCtx.clearRect(0,0,sigCtx.canvas.width,sigCtx.canvas.height); sigHasDrawn = false; }
+function getSig(){ return sigHasDrawn ? document.getElementById("sigPad").toDataURL("image/png") : ""; }
+function today(){ return new Date().toISOString().slice(0,10); }
+
+/* =========================================================
+   工單(暫存於瀏覽器 localStorage)
+   ========================================================= */
+const KEY = "bodyshop_orders_v1";
+function load(){ try{ return JSON.parse(localStorage.getItem(KEY)||"[]"); }catch(e){ return []; } }
+function save(list){ localStorage.setItem(KEY, JSON.stringify(list)); schedulePush(); }
+
+/* =========================================================
+   跨裝置同步:Supabase(雲端共用資料庫)
+   - 儲存時把整份工單 PATCH 到雲端(去抖動)
+   - 每 4 秒輪詢一次;雲端版本較新就同步下來並重繪
+   - anon/publishable key 可公開,搭配 RLS 使用
+   ========================================================= */
+const SUPABASE_URL = "https://fibgqtjizhorzcyuwpkx.supabase.co";
+const SUPABASE_KEY = "sb_publishable_GH5Hwoq1Z8cAjmd9ZmO7nw_cR4VOqtC";
+const SB_ROW = SUPABASE_URL + "/rest/v1/app_state?id=eq.1";
+const SB_HEADERS = { "apikey": SUPABASE_KEY, "Authorization": "Bearer " + SUPABASE_KEY, "Content-Type": "application/json" };
+let syncRev = 0;          // 目前已知的雲端版本(rev)
+let pushTimer = null;
+let applyingRemote = false;
+function newRev(){ return Date.now() * 1000 + Math.floor(Math.random() * 1000); }
+function schedulePush(){
+  if(applyingRemote) return;                 // 套用遠端資料時不要反向推送
+  clearTimeout(pushTimer);
+  pushTimer = setTimeout(pushData, 350);
+}
+function pushData(){
+  let list; try{ list = JSON.parse(localStorage.getItem(KEY) || "[]"); }catch(e){ list = []; }
+  const rev = newRev();
+  fetch(SB_ROW, {
+    method:"PATCH",
+    headers: Object.assign({ "Prefer":"return=minimal" }, SB_HEADERS),
+    body: JSON.stringify({ rev: rev, list: list })
+  }).then(r=>{ if(r.ok) syncRev = rev; }).catch(()=>{});
+}
+function pullData(){
+  fetch(SB_ROW + "&select=rev,list", { headers: SB_HEADERS, cache:"no-store" })
+    .then(r=>r.json()).then(rows=>{
+      if(!Array.isArray(rows) || !rows.length) return;
+      const d = rows[0];
+      const localHas = (localStorage.getItem(KEY) && localStorage.getItem(KEY) !== "[]");
+      // 雲端尚無資料,但本機有 → 先把本機資料上傳成為共用資料
+      if((!d.list || d.list.length === 0) && localHas && syncRev === 0){ pushData(); return; }
+      // 雲端版本較新 → 同步下來
+      if(d.rev && d.rev !== syncRev && Array.isArray(d.list)){
+        syncRev = d.rev;
+        applyingRemote = true;
+        localStorage.setItem(KEY, JSON.stringify(d.list));
+        applyingRemote = false;
+        render();
+      }
+    }).catch(()=>{});
+}
+function startSync(){
+  pullData();                 // 開啟時先抓一次
+  setInterval(pullData, 4000);// 之後每 4 秒同步
+}
+
+function submitOrder(){
+  const o = {
+    id: Date.now(),
+    workNo: val("workNo"),
+    name: (val("custName") + val("title")).trim(), phone: val("custPhone"), plate: val("plate").toUpperCase(),
+    vin: val("vin"), model: val("model"), year: val("year"), version: val("version"),
+    color: val("color"), eta: val("eta"),
+    paymentType: val("paymentType"), insurer: val("insurer"),
+    paymentLabel: computePaymentLabel(val("paymentType"), val("insurer")),
+    caseNo: val("caseNo"), agent: val("agent"), agentPhone: val("agentPhone"),
+    dispatchAt: dispatchAt || 0,
+    entryTime: val("entryTime"), finishTime: val("finishTime"), exitTime: val("exitTime"),
+    claimDocs: Object.assign({}, claimDocs),
+    note: val("note"),
+    signature: getSig(), signDate: val("signDate"),
+    receptionist: staffLabel(val("receptionist")),
+    checkin: checkinTime,
+    keyKept: keyKept, alignment: alignment,
+    damage: Object.entries(dmg).map(([part,mode])=>({part,mode})),
+    status: +val("statusSel") || 0,
+    time: new Date().toLocaleString("zh-TW",{hour12:false})
+  };
+  if(!o.plate){ toast("請至少填寫車牌號碼", true); return; }
+  const list = load();
+  if(editingId){
+    const idx = list.findIndex(x=>x.id===editingId);
+    if(idx>=0){
+      const prev = list[idx];
+      o.id = prev.id;                       // 保留原本 id 與建立時間
+      o.time = prev.time || o.time;
+      if(!getSig()) o.signature = prev.signature || "";   // 未重新簽名則保留原簽名
+      // 保留技師打卡 / 完檢表等施工資料
+      o.punch = prev.punch; o.qc = prev.qc;
+      o.completeTime = prev.completeTime; o.finishTime = o.finishTime || prev.finishTime;
+      o.bodyCheckin = prev.bodyCheckin; o.paintCheckin = prev.paintCheckin;
+      // 若改到已交付而沒有出場時間,補記(視為已交車)
+      const cur = STATUS[o.status] || {};
+      if(cur.en === "Delivered" && !o.exitTime){
+        const d=new Date(), p=n=>String(n).padStart(2,'0');
+        o.exitTime = `${d.getFullYear()}-${p(d.getMonth()+1)}-${p(d.getDate())}T${p(d.getHours())}:${p(d.getMinutes())}`;
+      }
+      list[idx] = o; save(list); render();
+      clearForm(); toast("工單已更新 ✓");
+      return;
+    }
+  }
+  list.unshift(o); save(list); render();
+  clearForm(); toast("工單已建立 ✓");
+}
+function val(id){ return document.getElementById(id).value.trim(); }
+function staffLabel(v){
+  if(!v) return "";
+  const [name, zh] = v.split("｜");   // 工單不顯示工號
+  return `${name}(${zh})`;
+}
+
+function clearForm(){
+  ["custName","custPhone","plate","vin","model","year","version","workNo","eta","entryTime","finishTime","exitTime","note","payParse","caseNo","agent","agentPhone"].forEach(id=>document.getElementById(id).value="");
+  ["title","color","receptionist","statusSel","paymentType","insurer"].forEach(id=>document.getElementById(id).selectedIndex=0);
+  document.getElementById("decodeOut").classList.remove("show");
+  document.getElementById("insurerWrap").style.display = "none";
+  genVinQR();
+  dmg = {}; updateDiagram(); renderDmgList(); renderQuickParts();
+  claimDocs = {}; renderClaims();
+  clearSig();
+  document.getElementById("signDate").value = today();
+  document.getElementById("customPart").value = "";
+  checkinTime = "";
+  dispatchAt = 0; renderDispatchTime();
+  const pt = document.getElementById("punchTime"); pt.textContent = "尚未打卡"; pt.classList.add("empty");
+  keyKept = ""; alignment = "";
+  document.querySelectorAll(".seg-opt").forEach(b=>b.classList.remove("on"));
+  // 結束編輯狀態
+  editingId = null;
+  const b = document.getElementById("editBanner"); if(b) b.style.display = "none";
+  const sb = document.getElementById("submitBtn"); if(sb) sb.textContent = "建立工單";
+}
+
+function setStatus(id, s){
+  const list = load(); const o = list.find(x=>x.id===id);
+  if(o){
+    const target = STATUS[+s] || {};
+    // 交付前必須先填鈑金工資 / 噴漆工資
+    if(target.en === "Delivered" && !(hasWage(o.bodyWage) && hasWage(o.paintWage))){
+      openDeliver(id);
+      render();   // 下拉還原為原進度,待填完工資才真正交付
+      return;
+    }
+    o.status = +s;
+    const cur = STATUS[o.status] || {};
+    if(cur.zh === "鈑金" && !o.dispatchAt) o.dispatchAt = Date.now();   // 派工至鈑金 → 記派工時間
+    if((cur.en === "Service Complete" || cur.en === "Ready for Pick Up") && !o.completeTime){
+      o.completeTime = new Date().toLocaleString("zh-TW",{hour12:false});
+    }
+    if(cur.en === "Delivered" && !o.exitTime){                          // 已交付 → 視為已交車,記出場時間
+      const d=new Date(), p=n=>String(n).padStart(2,'0');
+      o.exitTime = `${d.getFullYear()}-${p(d.getMonth()+1)}-${p(d.getDate())}T${p(d.getHours())}:${p(d.getMinutes())}`;
+    }
+    save(list); render();
+  }
+}
+function delOrder(id){ save(load().filter(x=>x.id!==id)); render(); }
+
+/* ===== 交車確認:交付前必填鈑金 / 噴漆工資,並同步到總表 ===== */
+let pendingDeliverId = null;
+function hasWage(v){ return v!==undefined && v!==null && String(v).trim()!==""; }
+function openDeliver(id){
+  const o = load().find(x=>x.id===id); if(!o) return;
+  pendingDeliverId = id;
+  document.getElementById("dlgPlate").textContent = o.plate || "(無車牌)";
+  document.getElementById("dlgBodyWage").value = hasWage(o.bodyWage) ? o.bodyWage : "";
+  document.getElementById("dlgPaintWage").value = hasWage(o.paintWage) ? o.paintWage : "";
+  document.getElementById("deliverModal").classList.add("show");
+  setTimeout(()=>document.getElementById("dlgBodyWage").focus(), 50);
+}
+function closeDeliver(){ document.getElementById("deliverModal").classList.remove("show"); pendingDeliverId = null; }
+function confirmDeliver(){
+  const bw = document.getElementById("dlgBodyWage").value.trim();
+  const pw = document.getElementById("dlgPaintWage").value.trim();
+  if(!hasWage(bw) || !hasWage(pw)){ toast("鈑金工資與噴漆工資皆為必填", true); return; }
+  const list = load(); const o = list.find(x=>x.id===pendingDeliverId); if(!o){ closeDeliver(); return; }
+  o.bodyWage = bw; o.paintWage = pw;
+  o.status = STATUS.findIndex(s=>s.en==="Delivered");
+  if(!o.exitTime){                              // 已交付 → 視為已交車
+    const d=new Date(), p=n=>String(n).padStart(2,'0');
+    o.exitTime = `${d.getFullYear()}-${p(d.getMonth()+1)}-${p(d.getDate())}T${p(d.getHours())}:${p(d.getMinutes())}`;
+  }
+  save(list); render(); closeDeliver();
+  toast("已交付 ✓ 工資已同步總表");
+}
+
+/* =========================================================
+   完檢表:開啟 / 勾選 / 列印
+   ========================================================= */
+let qcOpenId = null;
+function qcMutate(id, fn){
+  const list = load(); const o = list.find(x=>x.id===id); if(!o) return null;
+  o.qc = o.qc || {checks:{}, tire:{}, pos:{}, park:"", note:"", eta:""};
+  o.punch = o.punch || {};
+  fn(o); save(list); return o;
+}
+function normPos(s){ return (s||"").replace("車門","門").replace("葉子板","葉"); }
+function posChecked(o, p){
+  if(o.qc.pos && Object.prototype.hasOwnProperty.call(o.qc.pos, p)) return o.qc.pos[p];
+  return (o.damage||[]).some(d=>normPos(d.part).includes(p) || p.includes(normPos(d.part)));
+}
+function signInfo(o, sec){
+  if(sec.sign === "body")  return {tech:o.bodyTech||"",  time:o.bodyCheckin||"",  complete:o.bodyComplete||"",  cross:o.bodyCross||"",  crossBy:o.bodyCrossBy||""};
+  if(sec.sign === "paint"){
+    const st = (o.paintStages||{})[sec.pstage] || {};
+    return {tech:o.paintTech||"", time:st.start||"", complete:st.finish||"", cross:o.paintCross||"", crossBy:o.paintCrossBy||""};
+  }
+  return null;
+}
+function openQC(id){
+  const o = qcMutate(id, ()=>{}); if(!o) return;
+  qcOpenId = id;
+  document.getElementById("qcBody").innerHTML = buildQC(o);
+  document.getElementById("qcModal").classList.add("show");
+  document.getElementById("qcModal").scrollTop = 0;
+}
+function closeQC(){ document.getElementById("qcModal").classList.remove("show"); qcOpenId = null; }
+function printQC(){ window.print(); }
+
+/* ===== 案號紙(依上方輸入自動帶出,一鍵列印) ===== */
+let caseOpenId = null;
+function buildCaseSheet(o){
+  // 依「產物保險公司_空白表格」版面:橫式,四列(產物保險公司 / 車號 / 案號 / 出險日期)
+  const rows = [
+    ["產物保險公司", o.paymentLabel || "—"],
+    ["車號",         o.plate || "—"],
+    ["案號",         o.caseNo || "—"],
+    ["出險日期",     o.dispatchAt ? dispatchMD(o.dispatchAt) : ""]
+  ];
+  return `<div class="case-sheet">${
+    rows.map(([k,v])=>`<div class="case-row"><b>${k}</b><span class="case-val">${v}</span></div>`).join("")
+  }</div>`;
+}
+function openCase(id){
+  const o = load().find(x=>x.id===id); if(!o) return;
+  caseOpenId = id;
+  document.getElementById("caseBody").innerHTML = buildCaseSheet(o);
+  document.getElementById("caseModal").classList.add("show");
+}
+function closeCase(){ document.getElementById("caseModal").classList.remove("show"); caseOpenId = null; }
+
+/* ===== 原始 Key-in 資料 + VIN QR(技師可點入檢視、掃碼)===== */
+let detailOpenId = null;
+function dRow(k, v, dim){
+  const has = (v!==undefined && v!==null && String(v).trim()!=="");
+  return `<div class="dl"><span class="k">${k}</span><span class="v${(!has||dim)?" dim":""}">${has?v:"—"}</span></div>`;
+}
+function buildDetail(o){
+  const vehicle = [o.model,o.year,o.version].filter(Boolean).join(" ");
+  const qr = o.vin
+    ? `<div class="detail-qr">
+         <div class="qrbox"><div id="detailQr"></div></div>
+         <div>
+           <div class="cap">車身碼 VIN</div>
+           <div class="vin">${o.vin}</div>
+           <div class="hint2">技師可直接掃描此 QR Code 取得車身碼</div>
+         </div>
+       </div>`
+    : `<div class="detail-qr"><div class="cap">尚未輸入車身碼 VIN,無法產生 QR Code</div></div>`;
+  const dmg = (o.damage&&o.damage.length)
+    ? `<div class="detail-dmg">${o.damage.map(d=>`<span class="chip dmg">${d.part}${d.mode?"·"+d.mode:""}</span>`).join("")}</div>`
+    : `<span class="v dim">—</span>`;
+  const st = STATUS[o.status] || STATUS[0];
+  return qr +
+    `<div class="detail-sec"><h4>👤 顧客資訊</h4><div class="detail-grid">
+        ${dRow("顧客姓名", o.name)}
+        ${dRow("聯絡電話", o.phone)}
+     </div></div>`+
+    `<div class="detail-sec"><h4>🚘 車輛資訊</h4><div class="detail-grid">
+        ${dRow("車牌號碼", o.plate)}
+        ${dRow("工單號", o.workNo)}
+        ${dRow("車型", vehicle)}
+        ${dRow("車色", o.color)}
+     </div></div>`+
+    `<div class="detail-sec"><h4>💳 付款 / 理賠</h4><div class="detail-grid">
+        ${dRow("付款類型", o.paymentLabel)}
+        ${dRow("保險公司", o.insurer)}
+        ${dRow("案號", o.caseNo)}
+        ${dRow("經辦", o.agent)}
+        ${dRow("經辦電話", o.agentPhone)}
+        ${dRow("鈑金工資", o.bodyWage)}
+        ${dRow("噴漆工資", o.paintWage)}
+     </div></div>`+
+    `<div class="detail-sec"><h4>🔧 損傷部位</h4>${dmg}</div>`+
+    `<div class="detail-sec"><h4>📋 需求 / 備註</h4><div class="detail-grid">
+        ${dRow("留鑰匙", o.keyKept)}
+        ${dRow("四輪定位", o.alignment)}
+     </div>${dRow("客人需求", o.note)}</div>`+
+    `<div class="detail-sec"><h4>🕒 時間 / 服務</h4><div class="detail-grid">
+        ${dRow("接車打卡", o.checkin)}
+        ${dRow("SA派工(鈑金)", o.dispatchAt?fmtDispatch(o.dispatchAt):"")}
+        ${dRow("預計交車", o.eta?fmtEta(o.eta):"")}
+        ${dRow("進場時間", o.entryTime?fmtEta(o.entryTime):"")}
+        ${dRow("出場時間", o.exitTime?fmtEta(o.exitTime):"")}
+        ${dRow("接待專員", o.receptionist)}
+        ${dRow("目前進度", st.en+"("+st.zh+")")}
+     </div></div>`+
+    (o.signature
+      ? `<div class="detail-sec"><h4>✍ 客戶簽名</h4><img src="${o.signature}" alt="客戶簽名" style="height:70px;border:1px solid var(--line);border-radius:8px;background:#fff;padding:2px">${o.signDate?`<span class="chip" style="margin-left:8px">${o.signDate}</span>`:""}</div>`
+      : "");
+}
+function openDetail(id){
+  const o = load().find(x=>x.id===id); if(!o) return;
+  detailOpenId = id;
+  document.getElementById("detailPlate").textContent = o.plate || "(無車牌)";
+  document.getElementById("detailSub").textContent = `建立於 ${o.time||"—"}`;
+  document.getElementById("detailBody").innerHTML = buildDetail(o);
+  if(o.vin && window.QRCode){
+    new QRCode(document.getElementById("detailQr"), {text:o.vin, width:132, height:132, correctLevel:QRCode.CorrectLevel.M});
+  }
+  const m = document.getElementById("detailModal");
+  m.classList.add("show"); m.scrollTop = 0;
+}
+function closeDetail(){ document.getElementById("detailModal").classList.remove("show"); detailOpenId = null; }
+
+/* ===== 載入既有工單到表單進行修改 / 追加(從原始資料進入)===== */
+function setV(id,v){ const e=document.getElementById(id); if(e) e.value = (v==null?"":v); }
+function editOrder(id){
+  const o = load().find(x=>x.id===id); if(!o) return;
+  editingId = id;
+  // 顧客(姓名可能已含稱謂,嘗試拆回)
+  let nm = o.name||"", ti = "先生";
+  if(nm.endsWith("先生")){ ti="先生"; nm=nm.slice(0,-2); }
+  else if(nm.endsWith("小姐")){ ti="小姐"; nm=nm.slice(0,-2); }
+  setV("custName", nm); setV("title", ti);
+  setV("custPhone", o.phone); setV("plate", o.plate);
+  // 車輛
+  setV("workNo", o.workNo); setV("vin", o.vin);
+  setV("model", o.model); setV("year", o.year); setV("version", o.version);
+  setV("color", o.color); genVinQR();
+  // 付款 / 理賠
+  setV("paymentType", o.paymentType); onPaymentChange();
+  setV("insurer", o.insurer);
+  setV("caseNo", o.caseNo); setV("agent", o.agent); setV("agentPhone", o.agentPhone);
+  claimDocs = Object.assign({}, o.claimDocs||{}); renderClaims();
+  // 時間
+  setV("entryTime", o.entryTime); setV("finishTime", o.finishTime); setV("exitTime", o.exitTime);
+  setV("eta", o.eta);
+  // 損傷部位(技師可在此追加)
+  dmg = {}; (o.damage||[]).forEach(d=>{ dmg[d.part] = d.mode || ""; });
+  updateDiagram(); renderDmgList(); renderQuickParts();
+  // 留鑰匙 / 四輪定位
+  keyKept = o.keyKept||""; alignment = o.alignment||"";
+  document.getElementById("segKey").querySelectorAll(".seg-opt").forEach(b=>b.classList.toggle("on", b.dataset.val===keyKept));
+  document.getElementById("segAlign").querySelectorAll(".seg-opt").forEach(b=>b.classList.toggle("on", b.dataset.val===alignment));
+  // 備註
+  setV("note", o.note);
+  // 服務指派 / 接待專員(把 "Name(zh)" 對回下拉值)
+  const rec = (RECEPTIONISTS.find(r=>`${r.name}(${r.zh})`===o.receptionist));
+  setV("receptionist", rec ? `${rec.name}｜${rec.zh}｜${rec.id}` : "");
+  setV("statusSel", String(o.status||0));
+  checkinTime = o.checkin || "";
+  const pt = document.getElementById("punchTime");
+  if(checkinTime){ pt.textContent = `${o.receptionist||""} · ${checkinTime}`; pt.classList.remove("empty"); }
+  else { pt.textContent = "尚未打卡"; pt.classList.add("empty"); }
+  dispatchAt = o.dispatchAt || 0; renderDispatchTime();
+  // 簽名日期
+  setV("signDate", o.signDate || today());
+  // 進入編輯狀態
+  const b = document.getElementById("editBanner"); if(b) b.style.display = "";
+  const bp = document.getElementById("editBannerPlate"); if(bp) bp.textContent = o.plate || "(無車牌)";
+  const sb = document.getElementById("submitBtn"); if(sb) sb.textContent = "更新工單 ✓";
+  closeDetail();
+  window.scrollTo({top:0, behavior:"smooth"});
+  toast("已載入工單,可修改 / 追加後按更新");
+}
+
+function printCase(){
+  // 案號紙為橫式 A4
+  const st = document.createElement("style");
+  st.id = "casePage";
+  st.textContent = "@media print{@page{size:A4 landscape; margin:14mm}}";
+  document.head.appendChild(st);
+  window.print();
+  setTimeout(()=>{ const e=document.getElementById("casePage"); if(e) e.remove(); }, 600);
+}
+
+function toggleCheck(id, key, el){
+  qcMutate(id, o=>{ o.qc.checks[key] = !o.qc.checks[key]; });
+  el.classList.toggle("on");
+}
+function setYN(id, key, val, el){
+  qcMutate(id, o=>{ o.qc.checks[key] = val; });
+  el.closest(".boxes").querySelectorAll(".qcbox").forEach(b=>b.classList.remove("on"));
+  el.classList.add("on");
+}
+// 是/否 直接點選(可再點一次取消),用於 SA 確認等
+function pickYN(id, key, val){
+  qcMutate(id, o=>{ o.qc.checks[key] = (o.qc.checks[key]===val ? "" : val); });
+  refreshQC();
+}
+function togglePos(id, p, el){
+  let now;
+  qcMutate(id, o=>{ now = !posChecked(o,p); o.qc.pos[p] = now; });
+  el.classList.toggle("on", now);
+}
+function saveQCField(id, field, v){ qcMutate(id, o=>{ o.qc[field] = v; }); }
+function saveTire(id, pos, f, v){ qcMutate(id, o=>{ o.qc.tire[pos] = o.qc.tire[pos]||{}; o.qc.tire[pos][f] = v; }); }
+
+// 完檢表內:技師選擇(每個工序自己選誰施工)
+function setSecTech(id, key, v){
+  qcMutate(id, o=>{ o.punch[key] = o.punch[key] || {}; o.punch[key].by = v; });
+  render();   // 讓工單清單即時顯示鈑金技師
+}
+// 完檢表內:壓時間(最終完工時間 = 總檢技師;日期 = 服務顧問)
+function stampQC(id, field){
+  qcMutate(id, o=>{ o.qc[field] = new Date().toLocaleString("zh-TW",{hour12:false}); });
+  refreshQC();
+  toast("已壓上時間 ✓");
+}
+// 完檢表內:各區段開工 / 完工 / 互檢打卡(時間自動帶入)
+function punchSec(id, key, stage){
+  const cur = ((load().find(x=>x.id===id)||{}).punch||{})[key] || {};
+  if(stage === "start" && !cur.by){ toast("請先於此工序選擇技師再打卡", true); return; }
+  qcMutate(id, o=>{
+    const t = new Date().toLocaleString("zh-TW",{hour12:false});
+    o.punch[key] = o.punch[key] || {};
+    o.punch[key][stage] = t;
+    if(stage!=="start") o.completeTime = t;  // 最新的完工/互檢 = 最終完工時間
+  });
+  refreshQC(); render();
+  toast(stage==="start"?"已開工打卡":stage==="finish"?"已完工打卡":"已互檢打卡");
+}
+function setCrossBy(id, key, v){
+  qcMutate(id, o=>{ o.punch[key] = o.punch[key] || {}; o.punch[key].crossBy = v; });
+}
+function refreshQC(){
+  if(qcOpenId==null) return;
+  const m = document.getElementById("qcModal"); const y = m.scrollTop;
+  const o = qcMutate(qcOpenId, ()=>{}); if(!o) return;
+  document.getElementById("qcBody").innerHTML = buildQC(o);
+  m.scrollTop = y;
+}
+
+function buildQC(o){
+  const head = `
+    <h2 class="qc-title">特斯拉直營鈑噴中心</h2>
+    <div class="qc-sub">鈑噴品質過程 / 最終檢驗單</div>
+    <div class="qc-head">
+      <div class="f"><b>工單號:</b><span class="val">${o.workNo||o.id}</span></div>
+      <div class="f"><b>VIN碼:</b><span class="val">${o.vin||""}</span></div>
+      <div class="f"><b>服務顧問:</b><span class="val">${o.receptionist||""}</span></div>
+      <div class="f"><b>車型:</b><span class="val">${(o.model||"")+" "+(o.version||"")}</span></div>
+      <div class="f"><b>顏色:</b><span class="val">${o.color||""}</span></div>
+      <div class="f"><b>車牌號:</b><span class="val">${o.plate||""}</span></div>
+      <div class="f"><b>進廠時間:</b><span class="val">${o.checkin||""}</span></div>
+      <div class="f"><b>預計交車:</b><input value="${o.qc.eta||fmtEta(o.eta)||""}" onchange="saveQCField(${o.id},'eta',this.value)" placeholder="—"></div>
+      <div class="f"><b>留鑰匙:</b><span class="val">${o.keyKept||""}　四輪定位:${o.alignment||""}</span></div>
+      <div class="qc-pos"><b style="font-size:12px">損傷位置:</b>${
+        (o.damage && o.damage.length)
+          ? o.damage.map(d=>`<span class="p pos-tag">${d.part}${d.mode?` <b style="color:${d.mode==='BP'?'#2563eb':'#e82127'}">${d.mode}</b>`:""}</span>`).join("")
+          : `<span style="color:#888">(無)</span>`
+      }</div>
+    </div>`;
+
+  const P = o.punch || {};
+  const secMap = {};
+  QC_FORM.forEach(sec=>{
+    const rows = sec.items.map((it,idx)=>{
+      const key = sec.key+"_"+idx;
+      if(sec.type==="yesno"){
+        const v = o.qc.checks[key]||"";
+        return `<div class="qc-item"><span class="t">${it}</span><span class="boxes">
+          <span class="yn">是<span class="qcbox ${v==="是"?"on":""}" onclick="setYN(${o.id},'${key}','是',this)"></span></span>
+          <span class="yn">否<span class="qcbox no ${v==="否"?"on":""}" onclick="setYN(${o.id},'${key}','否',this)"></span></span>
+        </span></div>`;
+      }
+      const on = !!o.qc.checks[key];
+      return `<div class="qc-item"><span class="t">${it}</span><span class="boxes">
+        <span class="yn">自檢<span class="qcbox ${on?"on":""}" onclick="toggleCheck(${o.id},'${key}',this)"></span></span>
+      </span></div>`;
+    }).join("");
+    let signHtml = "";
+    if(sec.techLabel){
+      const pk = P[sec.key] || {};
+      const poolMap = { body: BODY_TECHS, paint: PAINT_TECHS, all: ALL_TECHS };
+      const techPool = poolMap[sec.pool] || ALL_TECHS;
+      const start = pk.start || "", finish = pk.finish || "", crossT = pk.cross || "";
+      const by = pk.by || "", crossBy = pk.crossBy || "";
+      const techSel = `<select class="no-print" onchange="setSecTech(${o.id},'${sec.key}',this.value)"><option value="">${sec.techLabel}…</option>${
+        techPool.map(t=>{ const n=t.name+"("+t.zh+")"; return `<option ${by===n?"selected":""}>${n}</option>`; }).join("")
+      }</select>${by?`<span class="print-only">${by}</span>`:""}`;
+      const crossRow = sec.cross ? `
+        <div class="s"><b>互檢:</b><select class="no-print" onchange="setCrossBy(${o.id},'${sec.key}',this.value)"><option value="">互檢技師…</option>${
+          ALL_TECHS.map(t=>{ const n=t.name+"("+t.zh+")"; return `<option ${crossBy===n?"selected":""}>${n}</option>`; }).join("")
+        }</select>${crossBy?`<span class="print-only">${crossBy}</span>`:""} ${crossT?`<span class="val">${crossT}</span>`:`<button class="pbtn no-print" onclick="punchSec(${o.id},'${sec.key}','cross')">互檢打卡</button>`}</div>` : "";
+      signHtml = `<div class="qc-sign">
+        <div class="s"><b>${sec.techLabel}:</b>${techSel}</div>
+        <div class="s"><b>開工:</b>${start?`<span class="val">${start}</span>`:`<button class="pbtn no-print" onclick="punchSec(${o.id},'${sec.key}','start')">開工打卡</button>`}</div>
+        <div class="s"><b>完工:</b>${finish?`<span class="val">${finish}</span>`:`<button class="pbtn no-print" onclick="punchSec(${o.id},'${sec.key}','finish')">完工打卡</button>`}</div>
+        ${crossRow}
+      </div>`;
+    }
+    const noteHtml = sec.note ? `<div class="qc-note" style="font-size:11px;color:#666;margin-top:6px">${sec.note}</div>` : "";
+    secMap[sec.key] = `<div class="qc-sec"><h4>${sec.title}${sec.type==="yesno"?' <span style="font-weight:400;font-size:11px;color:#888">(是 / 否)</span>':' <span style="font-weight:400;font-size:11px;color:#888">(自檢)</span>'}</h4>${rows}${noteHtml}${signHtml}</div>`;
+  });
+  const tire = `<div class="qc-tire"><b>胎壓 / 胎紋</b>
+    <table>
+      <tr><td></td><td>胎壓</td><td>胎紋</td></tr>
+      ${[["lf","左前"],["rf","右前"],["lr","左後"],["rr","右後"]].map(([k,zh])=>`
+        <tr><td>${zh}</td>
+          <td><input value="${(o.qc.tire[k]||{}).p||""}" onchange="saveTire(${o.id},'${k}','p',this.value)"></td>
+          <td><input value="${(o.qc.tire[k]||{}).t||""}" onchange="saveTire(${o.id},'${k}','t',this.value)"></td>
+        </tr>`).join("")}
+    </table></div>`;
+
+  const saV = o.qc.checks.sa || "";
+  const PARK_SPOTS = ["側邊充電樁","前面充電樁","前面廣場"];
+  const parkSel = `<select class="no-print" onchange="saveQCField(${o.id},'park',this.value)"><option value="">選擇車位…</option>${
+    PARK_SPOTS.map(p=>`<option ${o.qc.park===p?"selected":""}>${p}</option>`).join("")
+  }</select><span class="print-only">${o.qc.park||""}</span>`;
+  const finalSignSel = `<select class="no-print" onchange="saveQCField(${o.id},'finalSign',this.value)"><option value="">總檢技師…</option>${
+    ALL_TECHS.map(t=>{ const n=t.name+"("+t.zh+")"; return `<option ${o.qc.finalSign===n?"selected":""}>${n}</option>`; }).join("")
+  }</select><span class="print-only">${o.qc.finalSign||""}</span>`;
+  const foot = `<div class="qc-foot">
+      <div class="f"><b>最終完工時間:</b>${o.qc.finalTime?`<span class="val">${o.qc.finalTime}</span> <button class="pbtn no-print" onclick="stampQC(${o.id},'finalTime')">重壓</button>`:`<button class="pbtn no-print" onclick="stampQC(${o.id},'finalTime')">總檢技師壓時間</button>`}</div>
+      <div class="f"><b>停車位置:</b>${parkSel}</div>
+      <div class="f"><b>總檢簽字:</b>${finalSignSel}</div>
+      <div class="f"><b>服務顧問簽字:</b><span class="val">${o.receptionist||""}</span></div>
+      <div class="f" style="grid-column:1 / -1"><b>SA確認交車前遠端存取功能已恢復:</b>
+        <span class="sa-toggle no-print">
+          <button type="button" class="sa-opt ${saV==="是"?"on":""}" onclick="pickYN(${o.id},'sa','是')">是</button>
+          <button type="button" class="sa-opt ${saV==="否"?"on no":""}" onclick="pickYN(${o.id},'sa','否')">否</button>
+        </span><span class="print-only">${saV||""}</span>
+      </div>
+      <div class="f"><b>日期:</b>${o.qc.advisorDate?`<span class="val">${o.qc.advisorDate}</span> <button class="pbtn no-print" onclick="stampQC(${o.id},'advisorDate')">重壓</button>`:`<button class="pbtn no-print" onclick="stampQC(${o.id},'advisorDate')">服務顧問壓時間</button>`}</div>
+      <div class="f" style="grid-column:1 / -1"><b>備註:</b><input value="${o.qc.note||""}" onchange="saveQCField(${o.id},'note',this.value)"></div>
+    </div>`;
+
+  // 依規定表版面:左欄=鈑金拆解修復/噴漆前處理/噴塗面漆/鈑金裝配;右欄=拋光清潔/機電/總檢 + 胎壓 + 收尾簽名
+  const sections = `<div class="qc-cols">
+    <div class="qc-col">${["body","prep","paint","assy"].map(k=>secMap[k]||"").join("")}</div>
+    <div class="qc-col">${["polish","elec","final"].map(k=>secMap[k]||"").join("")}${tire}${foot}</div>
+  </div>`;
+
+  return head + sections;
+}
+
+function techsInvolved(o){
+  const set = new Set();
+  Object.values(o.punch || {}).forEach(p=>{ if(p && p.by) set.add(p.by); });
+  return [...set].join("、");
+}
+// 鈑金技師 = 鈑金拆解修復(body) + 鈑金裝配(assy) 工序所選技師
+function bodyTechText(o){ return [...new Set(bodyTechsOf(o))].join("、"); }
+// 其他工序技師(噴漆、拋光、機電…),排除鈑金技師
+function otherTechText(o){
+  const body = new Set(bodyTechsOf(o));
+  const set = new Set();
+  Object.values(o.punch || {}).forEach(p=>{ if(p && p.by && !body.has(p.by)) set.add(p.by); });
+  return [...set].join("、");
+}
+function claimSummary(o){
+  const d = o.claimDocs || {}; const keys = Object.keys(d);
+  const paid = keys.filter(k=>d[k]==="V");
+  const need = keys.filter(k=>d[k]==="X");
+  if(!paid.length && !need.length) return "";
+  let html = '<div class="chips">';
+  if(paid.length) html += `<span class="chip" style="background:#dcfce7;color:#15803d">📄 理賠已繳 ${paid.length} 項</span>`;
+  if(need.length) html += `<span class="chip dmg">需補繳:${need.join("、")}</span>`;
+  return html + '</div>';
+}
+// 流程進度:接車 → 派工 → 完工 → 交車
+function flowHtml(o){
+  const finish = o.finishTime || o.completeTime || (o.qc && o.qc.finalTime) || "";
+  const steps = [
+    {lbl:"接車", t:o.checkin},
+    {lbl:"派工", t:o.dispatchAt ? fmtDispatch(o.dispatchAt) : ""},
+    {lbl:"完工", t:finish},
+    {lbl:"交車", t:o.exitTime},
+  ];
+  let curIdx = steps.findIndex(s=>!s.t); if(curIdx<0) curIdx = 99;
+  return `<div class="flow">${steps.map((s,i)=>{
+    const done = !!s.t, cur = (i===curIdx);
+    return `<div class="step ${done?'done':''} ${cur?'cur':''}"><div class="dot">${done?'✓':''}</div><div class="lbl">${s.lbl}</div><div class="tm">${done?shortDT(s.t):(cur?'進行中':'')}</div></div>`;
+  }).join("")}</div>`;
+}
+function cardHtml(o){
+    const st = STATUS[o.status] || STATUS[0];
+    return `
+    <div class="wo">
+      <div class="top">
+        <div>
+          <div class="plate">${o.plate||"(無車牌)"}
+            ${o.workNo?`<span style="font-size:12px;color:var(--muted);font-weight:600">#${o.workNo}</span>`:""}
+            <span style="font-size:12px;color:${statusColor(o.status)}">● ${st.en}(${st.zh})</span>
+          </div>
+          <div class="meta">建立:${o.time}</div>
+          <div class="meta">專員:<b>${o.receptionist||"—"}</b> ｜ 鈑金技師:<b style="color:${bodyTechText(o)?'var(--accent)':'var(--muted)'}">${bodyTechText(o)||"未指派"}</b></div>
+        </div>
+        <button class="del" title="刪除" onclick="delOrder(${o.id})">×</button>
+      </div>
+      ${flowHtml(o)}
+      <div class="chips">
+        ${o.model?`<span class="chip">${o.model} ${o.year||""} ${o.version||""}</span>`:""}
+        ${o.color?`<span class="chip">${o.color}</span>`:""}
+        ${o.paymentLabel?`<span class="chip" style="background:#e0e7ff;color:#3730a3">💳 ${o.paymentLabel}</span>`:""}
+        ${o.checkin?`<span class="chip">🕒 接車:${o.checkin}</span>`:""}
+        ${o.dispatchAt?`<span class="chip" style="background:#fef3c7;color:#92400e">🔧 派工鈑金:${fmtDispatch(o.dispatchAt)}</span>`:""}
+        ${o.entryTime?`<span class="chip">進場:${fmtEta(o.entryTime)}</span>`:""}
+        ${o.finishTime?`<span class="chip">完工:${fmtEta(o.finishTime)}</span>`:""}
+        ${o.exitTime?`<span class="chip">出場:${fmtEta(o.exitTime)}</span>`:""}
+        ${o.eta?`<span class="chip">🚗 預計交車:${fmtEta(o.eta)}</span>`:""}
+        ${o.keyKept?`<span class="chip">🔑 鑰匙:${o.keyKept}</span>`:""}
+        ${o.alignment?`<span class="chip">四輪定位:${o.alignment}</span>`:""}
+      </div>
+      ${(o.caseNo||o.agent||o.agentPhone)?`<div class="meta" style="margin-top:4px">案號:${o.caseNo||"—"} ｜ 經辦:${o.agent||"—"} ｜ ${o.agentPhone||"—"}</div>`:""}
+      ${(o.damage&&o.damage.length)?`<div class="chips">${o.damage.map(d=>`<span class="chip dmg">${d.part}${d.mode?"·"+d.mode:""}</span>`).join("")}</div>`:""}
+      ${claimSummary(o)}
+      ${o.note?`<div class="meta" style="margin-top:8px">📝 備註:${o.note}</div>`:""}
+      <div style="margin-top:10px;display:flex;flex-wrap:wrap;gap:8px">
+        <button class="mini" onclick="openDetail(${o.id})">📄 原始資料 / 掃碼</button>
+        <button class="mini" onclick="openQC(${o.id})">📋 完檢表</button>
+        <button class="mini" onclick="openCase(${o.id})">🖨️ 列印案號紙</button>
+      </div>
+      <div style="margin-top:10px;display:flex;align-items:center;gap:8px">
+        <span style="font-size:12px;color:var(--muted)">進度</span>
+        <select class="status-sel" onchange="setStatus(${o.id}, this.value)">
+          ${STATUS.map((s,i)=>`<option value="${i}" ${i===o.status?"selected":""}>${s.en}(${s.zh})</option>`).join("")}
+        </select>
+      </div>
+    </div>`;
+}
+
+/* ===== 今日工單:行事曆 / 清單 / 篩選 ===== */
+let woView = "cal", calRef = new Date(), fRecepVal = "", fBodyVal = "", calSelKey = null;
+function bodyTechsOf(o){ const p=o.punch||{}; return [(p.body||{}).by,(p.assy||{}).by].filter(Boolean); }
+function orderMatches(o){
+  if(fRecepVal && o.receptionist !== fRecepVal) return false;
+  if(fBodyVal && !bodyTechsOf(o).includes(fBodyVal)) return false;
+  return true;
+}
+function populateWOFilters(){
+  const fr=document.getElementById("fRecep"), fb=document.getElementById("fBody");
+  if(fr && fr.options.length<=1) RECEPTIONISTS.forEach(t=> fr.insertAdjacentHTML("beforeend",`<option>${t.name}(${t.zh})</option>`));
+  if(fb && fb.options.length<=1) BODY_TECHS.forEach(t=> fb.insertAdjacentHTML("beforeend",`<option>${t.name}(${t.zh})</option>`));
+}
+function setView(v){
+  woView=v;
+  document.querySelectorAll("#viewSeg .vbtn").forEach(b=>b.classList.toggle("on", b.dataset.view===v));
+  document.getElementById("calNav").style.display = (v==="cal")?"":"none";
+  renderWO();
+}
+function setWOFilter(){
+  fRecepVal=document.getElementById("fRecep").value;
+  fBodyVal=document.getElementById("fBody").value;
+  renderStats();
+  renderWO();
+}
+function calMove(d){ calRef=new Date(calRef.getFullYear(), calRef.getMonth()+d, 1); calSelKey=null; renderWO(); }
+function openDay(key){ calSelKey=key; renderWO(); }
+function render(){
+  populateWOFilters();
+  document.getElementById("woCount").textContent = load().length;
+  renderStats();
+  renderWO();
+}
+function renderStats(){
+  const list = load().filter(orderMatches);   // 隨專員 / 鈑金技師篩選連動
+  const todayStr = new Date().toDateString();
+  const inShop = list.filter(o=>!o.exitTime).length;
+  const delivered = list.filter(o=>!!o.exitTime).length;
+  const todayIn = list.filter(o=>new Date(o.id).toDateString()===todayStr).length;
+  const box = document.getElementById("woStats");
+  if(box) box.innerHTML =
+    `<div class="st info"><span class="ic">🚗</span><b>${inShop}</b><span class="lb">在廠中</span></div>`+
+    `<div class="st"><span class="ic">📥</span><b>${todayIn}</b><span class="lb">今日接車</span></div>`+
+    `<div class="st ok"><span class="ic">✅</span><b>${delivered}</b><span class="lb">已交車</span></div>`;
+}
+function renderWO(){
+  const box=document.getElementById("woList");
+  if(woView==="cal"){ box.innerHTML = renderCalendar(load()); return; }
+  if(woView==="table"){ box.innerHTML = renderTable(); return; }
+  const list=load().filter(orderMatches).sort((a,b)=>b.id-a.id);
+  if(!list.length){ box.innerHTML=`<div class="empty">此條件下沒有工單。</div>`; return; }
+  box.innerHTML = list.map(cardHtml).join("");
+}
+
+/* ===== 施工表(總表):彙整所有工單,即時更新,可匯出 Excel ===== */
+// 對齊「Taichung 鈑噴維修車輛表」施工表欄位
+const TABLE_COLS = ["項次","車牌","鈑金","鈑金工資","噴漆工資","土底","噴漆","打蠟","車型","顏色","VIN","施工部位","輪框送修","車輛入廠日","SA派工","鈑金派工","噴漆派工","完工日","交車日期","狀態","付款","備註","保險公司","接待","維修工單","接車狀況備註","返修","返修原因"];
+function ymd(ts){ const d=new Date(ts); return `${d.getFullYear()}/${String(d.getMonth()+1).padStart(2,'0')}/${String(d.getDate()).padStart(2,'0')}`; }
+function dOnly(v){ if(v==null||v==="") return ""; if(typeof v==="number") return ymd(v); return String(v).replace("T"," ").split(" ")[0]; }
+function secBy(o,k){ return ((o.punch||{})[k]||{}).by || ""; }
+function secStart(o,k){ return ((o.punch||{})[k]||{}).start || ""; }
+function rowData(o, idx){
+  const dmg = (o.damage||[]).map(d=>d.part+(d.mode?`(${d.mode})`:"")).join("、");
+  const rimBP = (o.damage||[]).some(d=>/鋁圈/.test(d.part) && d.mode==="BP");   // 鋁圈BP → 輪框送修
+  return [
+    idx==null ? "" : String(idx+1),                       // 項次
+    o.plate||"",                                          // 車牌
+    bodyTechText(o),                                      // 鈑金(技師)
+    o.bodyWage||"",                                       // 鈑金工資
+    o.paintWage||"",                                      // 噴漆工資
+    secBy(o,"prep"),                                      // 土底(中塗技師)
+    secBy(o,"paint"),                                     // 噴漆(噴漆技師)
+    secBy(o,"polish"),                                    // 打蠟(拋光技師)
+    [o.model,o.year,o.version].filter(Boolean).join(" "), // 車型
+    o.color||"",                                          // 顏色
+    o.vin||"",                                            // VIN
+    dmg,                                                  // 施工部位
+    rimBP ? "✔" : "",                                     // 輪框送修(鋁圈BP)
+    dOnly(o.checkin),                                     // 車輛入廠日
+    o.dispatchAt ? ymd(o.dispatchAt) : "",               // SA派工(維修進度轉鈑金日)
+    dOnly(secStart(o,"body")),                            // 鈑金派工(鈑金拆解修復開工日)
+    dOnly(secStart(o,"prep")),                            // 噴漆派工(中塗技師開工日)
+    dOnly((o.qc&&o.qc.finalTime)||""),                    // 完工日(最終完工時間·總檢技師壓)
+    dOnly(o.eta),                                         // 交車日期(服務指派預計交車)
+    (STATUS[o.status]||{}).zh||"",                        // 狀態
+    o.paymentLabel||"",                                   // 付款
+    "",                                                   // 備註
+    o.insurer||"",                                        // 保險公司
+    o.receptionist||"",                                   // 接待
+    o.workNo||"",                                         // 維修工單
+    (o.note||"").replace(/\r?\n/g," "),                   // 接車狀況備註
+    "",                                                   // 返修
+    ""                                                    // 返修原因
+  ];
+}
+function renderTable(){
+  const list=load().filter(orderMatches).sort((a,b)=>b.id-a.id);
+  if(!list.length) return `<div class="empty">此條件下沒有工單。</div>`;
+  return `<div class="tbl-wrap"><table class="tbl">
+    <thead><tr>${TABLE_COLS.map(c=>`<th>${c}</th>`).join("")}</tr></thead>
+    <tbody>${list.map((o,i)=>`<tr>${rowData(o,i).map(c=>`<td>${c||""}</td>`).join("")}</tr>`).join("")}</tbody>
+  </table></div>`;
+}
+function exportCSV(){
+  const list=load().filter(orderMatches).sort((a,b)=>b.id-a.id);
+  if(!list.length){ toast("目前沒有可匯出的工單", true); return; }
+  const esc = v => `"${String(v==null?"":v).replace(/"/g,'""')}"`;
+  const lines = [TABLE_COLS.map(esc).join(",")].concat(list.map((o,i)=>rowData(o,i).map(esc).join(",")));
+  const csv = "\uFEFF" + lines.join("\r\n");   // BOM 讓 Excel 正確顯示中文
+  const blob = new Blob([csv], {type:"text/csv;charset=utf-8"});
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = `施工表_${ymd(Date.now()).replace(/\//g,"")}.csv`;
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(()=>URL.revokeObjectURL(a.href), 1000);
+  toast("已匯出施工表 ✓");
+}
+function renderCalendar(all){
+  const y=calRef.getFullYear(), m=calRef.getMonth();
+  const lab=document.getElementById("calLabel"); if(lab) lab.textContent=`${y} 年 ${m+1} 月`;
+  const startDow=new Date(y,m,1).getDay(), days=new Date(y,m+1,0).getDate();
+  const byDay={};
+  all.forEach(o=>{ if(!orderMatches(o)) return; const d=new Date(o.id); if(d.getFullYear()===y&&d.getMonth()===m){ (byDay[d.getDate()]=byDay[d.getDate()]||[]).push(o);} });
+  const dow=["日","一","二","三","四","五","六"];
+  let html=`<div class="cal-grid">`+dow.map(d=>`<div class="cal-dow">${d}</div>`).join("");
+  for(let i=0;i<startDow;i++) html+=`<div class="cal-cell empty"></div>`;
+  const todayStr=new Date().toDateString();
+  for(let dn=1;dn<=days;dn++){
+    const os=byDay[dn]||[]; const key=`${y}-${m}-${dn}`;
+    const isT=new Date(y,m,dn).toDateString()===todayStr;
+    html+=`<div class="cal-cell ${isT?'today':''} ${calSelKey===key?'sel':''} ${os.length?'has':''}" onclick="openDay('${key}')">
+      <div class="cal-d">${dn}</div>
+      ${os.length?`<div class="cal-count">${os.length}<span>台</span></div>`:''}
+    </div>`;
+  }
+  html+=`</div>`;
+  if(calSelKey){
+    const [yy,mm,dd]=calSelKey.split("-").map(Number);
+    if(yy===y&&mm===m){
+      const os=(byDay[dd]||[]).sort((a,b)=>b.id-a.id);
+      html+=`<div class="cal-day-detail"><h3>${y}/${m+1}/${dd} · 共 ${os.length} 台${fRecepVal?` · 專員:${fRecepVal}`:""}${fBodyVal?` · 鈑金:${fBodyVal}`:""}</h3>${os.length?os.map(cardHtml).join(""):'<div class="empty">當日無工單。</div>'}</div>`;
+    }
+  }
+  return html;
+}
+
+let toastTimer;
+function toast(msg, isErr){
+  const t = document.getElementById("toast");
+  t.textContent = msg; t.style.background = isErr ? "#e82127" : "#16a34a";
+  t.classList.add("show");
+  clearTimeout(toastTimer); toastTimer = setTimeout(()=>t.classList.remove("show"), 2200);
+}
+
+renderDmgList();
+renderQuickParts();
+renderClaims();
+initSigPad();
+document.getElementById("signDate").value = today();
+render();
+startSync();   // 啟動跨裝置資料同步
+
+</script>
+</body>
+</html>
