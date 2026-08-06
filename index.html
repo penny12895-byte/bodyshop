@@ -567,12 +567,15 @@
       <div class="card">
         <h2><span class="dot"></span>付款類型</h2>
         <div class="field">
-          <label>快速輸入(貼上理賠字串,自動帶入)</label>
-          <div style="display:flex; gap:8px">
-            <input id="payParse" placeholder="例:富邦本52626D103173林宜賢04-23850866#228前保BP.左前葉BP" style="flex:1"
+          <label>快速輸入(貼上理賠字串,或拍照理賠單自動辨識)</label>
+          <div style="display:flex; gap:8px; flex-wrap:wrap">
+            <input id="payParse" placeholder="例:富邦本52626D103173林宜賢04-23850866#228前保BP.左前葉BP" style="flex:1;min-width:180px"
                    onkeydown="if(event.key==='Enter'){parseAndFillPayment();event.preventDefault();}" />
+            <button type="button" class="btn-ghost" style="flex:none" onclick="document.getElementById('payPhoto').click()">📷 拍照辨識</button>
             <button type="button" class="btn-ghost" style="flex:none" onclick="parseAndFillPayment()">解析</button>
           </div>
+          <input id="payPhoto" type="file" accept="image/*" capture="environment" style="display:none" onchange="onPayPhoto(event)" />
+          <div id="payOcrStatus" class="hint" style="display:none;margin-top:6px"></div>
           <div class="hint">自動辨識:保險公司 + 本/財車、案號、經辦、電話,並連動受損部位。</div>
         </div>
         <div class="row">
@@ -603,7 +606,10 @@
           </div>
           <div>
             <label>經辦電話</label>
-            <input id="agentPhone" placeholder="含分機" />
+            <div style="display:flex;gap:6px">
+              <input id="agentPhone" placeholder="含分機" style="flex:1" />
+              <button type="button" class="btn-ghost" style="flex:none" onclick="dialAgent()" title="撥打">📞</button>
+            </div>
           </div>
         </div>
         <div class="hint">選「保險本車 / 保險財車」時,選擇保險公司後會自動組成例如「國泰本車」「富邦財車」。案號紙的「出險日期」會自動帶入派工至鈑金的派工日期。</div>
@@ -1248,6 +1254,8 @@ function paintRow(o){
 }
 function fmtEta(v){ return v ? String(v).replace("T", " ") : ""; }
 function shortDT(v){ return v ? String(v).replace("T"," ").replace(/:\d{2}$/,"") : ""; }
+// 產生 datetime-local 欄位格式(YYYY-MM-DDTHH:mm)
+function nowLocalInput(d){ d = d || new Date(); const p=n=>String(n).padStart(2,'0'); return `${d.getFullYear()}-${p(d.getMonth()+1)}-${p(d.getDate())}T${p(d.getHours())}:${p(d.getMinutes())}`; }
 
 /* =========================================================
    付款類型 / 保險公司
@@ -1316,6 +1324,91 @@ function parseAndFillPayment(){
   (r.parts || []).forEach(p=>{ dmg[canonPart(p.name)] = p.mode || ""; });   // 連動受損部位(對應圖表名稱)
   updateDiagram(); renderDmgList(); renderQuickParts();
   toast("已解析並帶入 ✓");
+}
+
+/* ===== 經辦電話:一鍵撥打(含分機以暫停鍵帶入) ===== */
+function telHref(p){ return String(p||"").replace(/[^0-9,;+*#]/g,"").replace(/#/g,","); }
+function dialAgent(){
+  const p = (document.getElementById("agentPhone").value || "").trim();
+  if(!p){ toast("尚無經辦電話", true); return; }
+  location.href = "tel:" + telHref(p);
+}
+
+/* ===== 拍照辨識理賠單:OCR → 擷取保險公司 / 案號 / 經辦 / 電話 ===== */
+function fileToImage(file){
+  return new Promise((res,rej)=>{ const img=new Image(); img.onload=()=>res(img); img.onerror=rej; img.src=URL.createObjectURL(file); });
+}
+let docWorker = null;
+async function getDocWorker(){
+  if(docWorker) return docWorker;
+  await ensureTesseract();
+  if(!window.Tesseract) throw new Error("OCR 模組載入失敗");
+  const base = tessSelfHosted ? {
+    workerPath: new URL("./tess/worker.min.js", location.href).href,
+    corePath:   new URL("./tess", location.href).href,
+    langPath:   new URL("./tess", location.href).href
+  } : {};
+  // 先試中英文(需 chi_tra 字庫);載不到就退回純英數(仍可辨識案號/電話)
+  try{ docWorker = await Tesseract.createWorker("chi_tra+eng", 1, base); }
+  catch(e){ docWorker = await Tesseract.createWorker("eng", 1, base); }
+  await docWorker.setParameters({ user_defined_dpi:"300", tessedit_pageseg_mode:"6" });
+  return docWorker;
+}
+function extractPayFromText(text){
+  const r = { parts: [] };
+  const t = (text || "").replace(/\r/g,"");
+  const flat = t.replace(/[\s\u3000]+/g,"");
+  // 保險公司(比對名單,取最長)
+  const ins = INSURERS.filter(i=>flat.includes(i)).sort((a,b)=>b.length-a.length)[0];
+  if(ins) r.insurer = ins;
+  // 本車 / 財車
+  if(/本車|自用/.test(flat)) r.paymentType = "保險本車";
+  else if(/財車|第三人|對方車/.test(flat)) r.paymentType = "保險財車";
+  // 電話(含分機:# 轉 分機 ext)
+  let mPhone = flat.match(/(0\d{1,3}[-)]?\d{6,8})(?:[#轉]|分機|ext\.?)(\d{1,5})/i)
+            || flat.match(/(0\d{1,3}[-)]?\d{6,8})/)
+            || flat.match(/(09\d{8})/);
+  if(mPhone){ let ph = mPhone[1].replace(/[)]/g,""); if(mPhone[2]) ph += "#" + mPhone[2]; r.agentPhone = ph; }
+  // 案號(標籤後;否則抓最長的英數混合字串)
+  let mc = t.match(/(?:賠?案號|理賠案號|報案號|案件編號)[:\s]*([A-Za-z0-9\-]{6,})/);
+  if(mc){ r.caseNo = mc[1].replace(/-/g,""); }
+  else {
+    const cand = (flat.match(/[A-Za-z0-9]{8,}/g)||[]).filter(s=>/\d/.test(s)&&/[A-Za-z]/.test(s));
+    if(cand[0]) r.caseNo = cand[0];
+  }
+  // 經辦(標籤後的中文姓名 2~4 字)
+  let ma = t.match(/(?:經辦|承辦|理賠(?:人員|員)?|服務人員)[人員]?[:\s]*([\u4e00-\u9fa5]{2,4})/);
+  if(ma) r.agent = ma[1];
+  return r;
+}
+async function onPayPhoto(ev){
+  const f = ev.target.files && ev.target.files[0]; ev.target.value = "";
+  if(!f) return;
+  const st = document.getElementById("payOcrStatus");
+  st.style.display = ""; st.textContent = "辨識中…第一次載入較久,請稍候";
+  try{
+    const img = await fileToImage(f);
+    const scale = Math.max(1, Math.min(2400/Math.max(img.width,img.height), 3));
+    const cv = document.createElement("canvas");
+    cv.width = Math.round(img.width*scale); cv.height = Math.round(img.height*scale);
+    cv.getContext("2d").drawImage(img,0,0,cv.width,cv.height);
+    const w = await getDocWorker();
+    const { data } = await w.recognize(cv);
+    const text = (data && data.text) || "";
+    const r = extractPayFromText(text);
+    const filled = [];
+    if(r.paymentType){ document.getElementById("paymentType").value = r.paymentType; onPaymentChange(); }
+    if(r.insurer){ document.getElementById("insurer").value = r.insurer; filled.push("保險公司"); }
+    if(r.caseNo){ document.getElementById("caseNo").value = r.caseNo; filled.push("案號"); }
+    if(r.agent){ document.getElementById("agent").value = r.agent; filled.push("經辦"); }
+    if(r.agentPhone){ document.getElementById("agentPhone").value = r.agentPhone; filled.push("電話"); }
+    document.getElementById("payParse").value = text.replace(/[\s\u3000]+/g," ").trim();
+    st.textContent = filled.length
+      ? ("已辨識帶入:" + filled.join("、") + " — 請核對是否正確")
+      : "辨識完成但未擷取到欄位,已把文字放入「快速輸入」框,可手動調整後按解析";
+  }catch(e){
+    st.textContent = "辨識失敗:" + ((e && e.message) || e) + "(可改用手動輸入)";
+  }
 }
 
 /* =========================================================
@@ -1499,6 +1592,8 @@ function clearForm(){
   const sb = document.getElementById("submitBtn"); if(sb) sb.textContent = "建立工單";
 }
 
+// 視為「施工中」的進度(手動或打卡進到這些階段 → 施工時間軸開始)
+const WORK_STAGES = ["In Production","Mechanical","Body","Prep","Paint","Paint Correction","Reassembly","Cleanup","QC"];
 function setStatus(id, s){
   const list = load(); const o = list.find(x=>x.id===id);
   if(o){
@@ -1512,12 +1607,13 @@ function setStatus(id, s){
     o.status = +s;
     const cur = STATUS[o.status] || {};
     if(cur.zh === "鈑金" && !o.dispatchAt) o.dispatchAt = Date.now();   // 派工至鈑金 → 記派工時間
-    if((cur.en === "Service Complete" || cur.en === "Ready for Pick Up") && !o.completeTime){
-      o.completeTime = new Date().toLocaleString("zh-TW",{hour12:false});
+    if(WORK_STAGES.includes(cur.en) && !o.workStartAt) o.workStartAt = Date.now();  // 手動選到施工階段 → 施工時間軸點亮
+    if(cur.en === "Service Complete" || cur.en === "Ready for Pick Up"){ // 進度點為完工 → 記完工時間
+      if(!o.completeTime) o.completeTime = new Date().toLocaleString("zh-TW",{hour12:false});
+      if(!o.doneAt) o.doneAt = Date.now();
     }
     if(cur.en === "Delivered" && !o.exitTime){                          // 已交付 → 視為已交車,記出場時間
-      const d=new Date(), p=n=>String(n).padStart(2,'0');
-      o.exitTime = `${d.getFullYear()}-${p(d.getMonth()+1)}-${p(d.getDate())}T${p(d.getHours())}:${p(d.getMinutes())}`;
+      o.exitTime = nowLocalInput();
     }
     save(list); render();
   }
@@ -1527,12 +1623,16 @@ function delOrder(id){ save(load().filter(x=>x.id!==id)); render(); }
 /* ===== 洗車券:交車前先發放,再進工資 ===== */
 const WASH_URL = "https://admcarwash.tmsplus.com.tw/SerialCaseManagement.html";
 const WASH_ACC = "TCIB", WASH_PWD = "@Tcib1108";
-let washPendingId = null;
+let washPendingId = null, washTab = null;
 function openCarWash(id){
   const o = load().find(x=>x.id===id); if(!o) return;
   washPendingId = id;
   document.getElementById("washPlate").textContent = o.plate || "(無車牌)";
   document.getElementById("washModal").classList.add("show");
+  // 順勢(沿用剛剛點選已交付的動作)自動彈出洗車券系統新分頁,並先複製帳號,方便貼上
+  try{ washTab = window.open(WASH_URL, "_blank", "noopener"); }catch(e){ washTab = null; }
+  try{ if(navigator.clipboard) navigator.clipboard.writeText(WASH_ACC); }catch(e){}
+  if(washTab) toast("已開新分頁,帳號已複製,請貼上後再複製密碼");
 }
 function closeWash(){
   document.getElementById("washModal").classList.remove("show");
@@ -1540,7 +1640,8 @@ function closeWash(){
 }
 function openWashSite(){
   try{ if(navigator.clipboard) navigator.clipboard.writeText(WASH_PWD); }catch(e){}
-  window.open(WASH_URL, "_blank");
+  try{ if(washTab && !washTab.closed){ washTab.focus(); } else { washTab = window.open(WASH_URL, "_blank", "noopener"); } }
+  catch(e){ window.open(WASH_URL, "_blank", "noopener"); }
   toast("已開啟洗車券系統,密碼已複製");
 }
 function washDoneNext(){
@@ -1574,10 +1675,8 @@ function confirmDeliver(){
   const list = load(); const o = list.find(x=>x.id===pendingDeliverId); if(!o){ closeDeliver(); return; }
   o.bodyWage = bw; o.paintWage = pw;
   o.status = STATUS.findIndex(s=>s.en==="Delivered");
-  if(!o.exitTime){                              // 已交付 → 視為已交車
-    const d=new Date(), p=n=>String(n).padStart(2,'0');
-    o.exitTime = `${d.getFullYear()}-${p(d.getMonth()+1)}-${p(d.getDate())}T${p(d.getHours())}:${p(d.getMinutes())}`;
-  }
+  if(!o.doneAt) o.doneAt = Date.now();            // 交付前視為已完工
+  if(!o.exitTime) o.exitTime = nowLocalInput();   // 已交付 → 視為已交車,記出場時間
   save(list); render(); closeDeliver();
   toast("已交付 ✓ 工資已同步總表");
 }
@@ -1675,7 +1774,7 @@ function buildDetail(o){
         ${dRow("保險公司", o.insurer)}
         ${dRow("案號", o.caseNo)}
         ${dRow("經辦", o.agent)}
-        ${dRow("經辦電話", o.agentPhone)}
+        ${dRow("經辦電話", o.agentPhone ? `<a href="tel:${telHref(o.agentPhone)}">📞 ${o.agentPhone}</a>` : "")}
         ${dRow("鈑金工資", o.bodyWage)}
         ${dRow("噴漆工資", o.paintWage)}
      </div></div>`+
@@ -1687,9 +1786,12 @@ function buildDetail(o){
     `<div class="detail-sec"><h4>🕒 時間 / 服務</h4><div class="detail-grid">
         ${dRow("接車打卡", o.checkin)}
         ${dRow("SA派工(鈑金)", o.dispatchAt?fmtDispatch(o.dispatchAt):"")}
-        ${dRow("預計交車", o.eta?fmtEta(o.eta):"")}
+        ${dRow("施工開始", o.workStartAt?fmtDispatch(o.workStartAt):firstPunchStart(o))}
+        ${dRow("完工(進度)", o.doneAt?fmtDispatch(o.doneAt):"")}
         ${dRow("進場時間", o.entryTime?fmtEta(o.entryTime):"")}
+        ${dRow("完工時間", o.finishTime?fmtEta(o.finishTime):"")}
         ${dRow("出場時間", o.exitTime?fmtEta(o.exitTime):"")}
+        ${dRow("預計交車", o.eta?fmtEta(o.eta):"")}
         ${dRow("接待專員", o.receptionist)}
         ${dRow("目前進度", st.en+"("+st.zh+")")}
      </div></div>`+
@@ -1786,12 +1888,14 @@ function setYN(id, key, val, el){
 function pickYN(id, key, val){
   qcMutate(id, o=>{
     o.qc.checks[key] = (o.qc.checks[key]===val ? "" : val);
-    // SA 確認「遠端存取已恢復」點「是」→ 自動壓服務顧問日期
+    // SA 確認「遠端存取已恢復」點「是」→ 自動壓服務顧問日期,並同步完工時間
     if(key==='sa' && o.qc.checks.sa==='是' && !o.qc.advisorDate){
-      o.qc.advisorDate = new Date().toLocaleString("zh-TW",{hour12:false});
+      const now = new Date();
+      o.qc.advisorDate = now.toLocaleString("zh-TW",{hour12:false});
+      o.finishTime = nowLocalInput(now);
     }
   });
-  refreshQC();
+  refreshQC(); render();
 }
 function togglePos(id, p, el){
   let now;
@@ -1799,17 +1903,24 @@ function togglePos(id, p, el){
   el.classList.toggle("on", now);
 }
 function saveQCField(id, field, v){
-  let stamped = false;
+  let stamped = false, jumpedQC = false;
   qcMutate(id, o=>{
     o.qc[field] = v;
-    // 總檢簽字押上名字 → 自動壓最終完工時間
-    if(field==='finalSign' && v && !o.qc.finalTime){
-      o.qc.finalTime = new Date().toLocaleString("zh-TW",{hour12:false});
-      o.completeTime = o.qc.finalTime;
-      stamped = true;
+    if(field==='finalSign' && v){
+      // 總檢簽字押上名字 → 自動壓最終完工時間(首次)
+      if(!o.qc.finalTime){
+        o.qc.finalTime = new Date().toLocaleString("zh-TW",{hour12:false});
+        o.completeTime = o.qc.finalTime;
+        stamped = true;
+      }
+      // 總檢簽字打卡 → 進度自動跳「品管檢查(QC)」
+      if(setAutoStatus(o, "QC")) jumpedQC = true;
     }
   });
-  if(stamped){ refreshQC(); render(); toast("總檢簽字完成 ✓ 已自動壓最終完工時間"); }
+  if(stamped || jumpedQC){ refreshQC(); render(); }
+  if(stamped && jumpedQC) toast("總檢簽字完成 ✓ 已壓最終完工時間,進度跳至「品管檢查」");
+  else if(stamped)        toast("總檢簽字完成 ✓ 已自動壓最終完工時間");
+  else if(jumpedQC)       toast("總檢簽字完成 ✓ 進度跳至「品管檢查」");
 }
 function saveTire(id, pos, f, v){ qcMutate(id, o=>{ o.qc.tire[pos] = o.qc.tire[pos]||{}; o.qc.tire[pos][f] = v; }); }
 
@@ -1820,22 +1931,52 @@ function setSecTech(id, key, v){
 }
 // 完檢表內:壓時間(最終完工時間 = 總檢技師;日期 = 服務顧問)
 function stampQC(id, field){
-  qcMutate(id, o=>{ o.qc[field] = new Date().toLocaleString("zh-TW",{hour12:false}); });
-  refreshQC();
-  toast("已壓上時間 ✓");
+  let synced = false;
+  qcMutate(id, o=>{
+    const now = new Date();
+    o.qc[field] = now.toLocaleString("zh-TW",{hour12:false});
+    // 服務顧問壓時間(完檢表最後面的日期)→ 同步代入「完工時間」
+    if(field==='advisorDate'){ o.finishTime = nowLocalInput(now); synced = true; }
+  });
+  refreshQC(); render();
+  toast(synced ? "已壓服務顧問時間 ✓ 已同步完工時間" : "已壓上時間 ✓");
+}
+// 完檢表工序開工打卡 → 自動連動維修進度(仍可用下拉手動改)
+const PUNCH_STATUS = {
+  body:  "Prep",              // 鈑金拆解修復(鈑金技師)→ Prep
+  prep:  "Paint Correction",  // 噴漆前處理 / 中塗(中塗技師)→ Paint Correction
+  paint: "Paint",             // 噴塗面漆(噴漆技師)→ Paint
+  assy:  "Reassembly",        // 鈑金裝配(鈑金技師)→ Reassembly
+  polish:"Cleanup",           // 拋光清潔(拋光技師)→ Cleanup
+};
+// 自動變更進度(已交付 / 已取消不覆蓋);回傳是否有變更
+function setAutoStatus(o, en){
+  const cur = STATUS[o.status] || {};
+  if(cur.en === "Delivered" || cur.en === "Cancelled") return false;
+  const idx = STATUS.findIndex(s=>s.en===en);
+  if(idx < 0 || o.status === idx) return false;
+  o.status = idx;
+  return true;
 }
 // 完檢表內:各區段開工 / 完工 / 互檢打卡(時間自動帶入)
 function punchSec(id, key, stage){
   const cur = ((load().find(x=>x.id===id)||{}).punch||{})[key] || {};
   if(stage === "start" && !cur.by){ toast("請先於此工序選擇技師再打卡", true); return; }
+  let jumped = "";
   qcMutate(id, o=>{
     const t = new Date().toLocaleString("zh-TW",{hour12:false});
     o.punch[key] = o.punch[key] || {};
     o.punch[key][stage] = t;
+    if(stage==="start"){
+      if(!o.workStartAt) o.workStartAt = Date.now();  // 完檢表第一個打卡的技師 = 施工開始
+      const en = PUNCH_STATUS[key];                   // 開工打卡 → 自動跳對應進度
+      if(en && setAutoStatus(o, en)) jumped = (STATUS[o.status]||{}).zh || en;
+    }
     if(stage!=="start") o.completeTime = t;  // 最新的完工/互檢 = 最終完工時間
   });
   refreshQC(); render();
-  toast(stage==="start"?"已開工打卡":stage==="finish"?"已完工打卡":"已互檢打卡");
+  const base = stage==="start"?"已開工打卡":stage==="finish"?"已完工打卡":"已互檢打卡";
+  toast(jumped ? (base + " ✓ 進度自動跳至「" + jumped + "」") : base);
 }
 function setCrossBy(id, key, v){
   qcMutate(id, o=>{ o.punch[key] = o.punch[key] || {}; o.punch[key].crossBy = v; });
@@ -1977,14 +2118,20 @@ function claimSummary(o){
   return html + '</div>';
 }
 // 流程進度:接車 → 派工 → 完工 → 交車
+function firstPunchStart(o){   // 完檢表中第一個打卡的技師開工時間(舊資料無 workStartAt 時的備援)
+  const P = o.punch || {};
+  for(const k of ["body","prep","paint","polish","assy","mech","elec"]){ if(P[k] && P[k].start) return P[k].start; }
+  return "";
+}
 function flowHtml(o){
-  const finish = o.finishTime || o.completeTime || (o.qc && o.qc.finalTime) || "";
-  const workStart = secStart(o,'body') || secStart(o,'prep') || o.bodyCheckin || o.paintCheckin || "";
+  // 施工:完檢表第一個技師打卡開始 ; 完工:進度被點為「維修完成 / 可取車」
+  const workStart = o.workStartAt ? fmtDispatch(o.workStartAt) : firstPunchStart(o);
+  const done = o.doneAt ? fmtDispatch(o.doneAt) : "";
   const steps = [
     {lbl:"接車", t:o.checkin},
     {lbl:"派工", t:o.dispatchAt ? fmtDispatch(o.dispatchAt) : ""},
     {lbl:"施工", t:workStart},
-    {lbl:"完工", t:finish},
+    {lbl:"完工", t:done},
     {lbl:"交車", t:o.exitTime},
   ];
   let curIdx = steps.findIndex(s=>!s.t); if(curIdx<0) curIdx = 99;
@@ -2022,7 +2169,7 @@ function cardHtml(o){
         ${o.keyKept?`<span class="chip">🔑 鑰匙:${o.keyKept}</span>`:""}
         ${o.alignment?`<span class="chip">四輪定位:${o.alignment}</span>`:""}
       </div>
-      ${(o.caseNo||o.agent||o.agentPhone)?`<div class="meta" style="margin-top:4px">案號:${o.caseNo||"—"} ｜ 經辦:${o.agent||"—"} ｜ ${o.agentPhone||"—"}</div>`:""}
+      ${(o.caseNo||o.agent||o.agentPhone)?`<div class="meta" style="margin-top:4px">案號:${o.caseNo||"—"} ｜ 經辦:${o.agent||"—"} ｜ ${o.agentPhone?`<a href="tel:${telHref(o.agentPhone)}" onclick="event.stopPropagation()">📞 ${o.agentPhone}</a>`:"—"}</div>`:""}
       ${(o.damage&&o.damage.length)?`<div class="chips">${o.damage.map(d=>`<span class="chip dmg">${d.part}${d.mode?"·"+d.mode:""}</span>`).join("")}</div>`:""}
       ${claimSummary(o)}
       ${o.note?`<div class="meta" style="margin-top:8px">📝 備註:${o.note}</div>`:""}
@@ -2122,7 +2269,7 @@ function rowData(o, idx){
     o.dispatchAt ? ymd(o.dispatchAt) : "",               // SA派工(維修進度轉鈑金日)
     dOnly(secStart(o,"body")),                            // 鈑金派工(鈑金拆解修復開工日)
     dOnly(secStart(o,"prep")),                            // 噴漆派工(中塗技師開工日)
-    dOnly((o.qc&&o.qc.finalTime)||""),                    // 完工日(最終完工時間·總檢技師壓)
+    dOnly(o.finishTime||(o.qc&&o.qc.finalTime)||""),      // 完工日(完工時間=服務顧問壓時間,退回總檢技師時間)
     dOnly(o.eta),                                         // 交車日期(服務指派預計交車)
     (STATUS[o.status]||{}).zh||"",                        // 狀態
     o.paymentLabel||"",                                   // 付款
